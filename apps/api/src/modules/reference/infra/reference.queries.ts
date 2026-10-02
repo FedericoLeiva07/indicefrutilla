@@ -23,4 +23,21 @@ export class ReferenceQueries {
     if (!row?.date || row.modal === null) return null;
     return { date: row.date, modalPpk: row.modal };
   }
+
+  async weeklyMedians(fromWeek: string): Promise<Map<string, number>> {
+    const rows: Array<{ week: string; median: number }> = await this.dataSource.query(
+      `WITH daily AS (
+         SELECT date, percentile_cont(0.5) WITHIN GROUP (ORDER BY modal_ppk) AS ref
+           FROM reference_prices
+          WHERE date >= $1::date
+          GROUP BY date
+       )
+       SELECT to_char(date_trunc('week', date), 'YYYY-MM-DD') AS week,
+              round(percentile_cont(0.5) WITHIN GROUP (ORDER BY ref)::numeric, 2)::float8 AS median
+         FROM daily
+        GROUP BY 1`,
+      [fromWeek],
+    );
+    return new Map(rows.map((r) => [r.week, r.median]));
+  }
 }

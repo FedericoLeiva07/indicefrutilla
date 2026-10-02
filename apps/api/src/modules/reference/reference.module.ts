@@ -6,6 +6,6 @@ import { ReferenceQueries } from './infra/reference.queries';
 @Module({
   controllers: [ReferenceController],
   providers: [ReferenceService, ReferenceQueries],
-  exports: [ReferenceService],
+  exports: [ReferenceService, ReferenceQueries],
 })
 export class ReferenceModule {}

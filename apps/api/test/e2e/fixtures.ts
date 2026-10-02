@@ -56,3 +56,32 @@ export async function insertStore(
 }
 
 export const newDevice = () => randomUUID();
+
+export async function insertReport(
+  db: DataSource,
+  report: {
+    storeId: number;
+    pricePerKg: number;
+    observedAt: string;
+    quality?: 'primera' | 'segunda';
+    status?: 'active' | 'flagged';
+    createdAt?: string;
+  },
+): Promise<number> {
+  const [row]: Array<{ id: number }> = await db.query(
+    `INSERT INTO reports (store_id, price_ars, presentation, quantity_g, price_per_kg, quality,
+                          observed_at, device_id, ip_hash, status, created_at)
+     VALUES ($1, $2, 'kg1', 1000, $2, $3, $4, $5, '\\x00', $6, COALESCE($7::timestamptz, now()))
+     RETURNING id`,
+    [
+      report.storeId,
+      report.pricePerKg,
+      report.quality ?? 'primera',
+      report.observedAt,
+      randomUUID(),
+      report.status ?? 'active',
+      report.createdAt ?? null,
+    ],
+  );
+  return row!.id;
+}

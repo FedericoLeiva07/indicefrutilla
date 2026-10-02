@@ -1,5 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import type { Presentation, Quality } from '@indice/shared';
+import type {
+  Presentation,
+  Quality,
+  ReportItemDto,
+  ReportSort,
+  ReportStatus,
+} from '@indice/shared';
 import { DataSource, type EntityManager } from 'typeorm';
 
 export interface StoreZone {
@@ -57,4 +63,87 @@ export class ReportsQueries {
     );
     return row!;
   }
+
+  async list(params: {
+    lat: number;
+    lng: number;
+    radius: number;
+    sort: ReportSort;
+    since: string;
+    offset: number;
+    limit: number;
+  }): Promise<{ items: ReportItemDto[]; total: number }> {
+    const where = `r.status = 'active' AND r.observed_at >= $4::date
+                   AND ST_DWithin(s.location, pt.g, $3)`;
+    const args = [params.lat, params.lng, params.radius, params.since];
+    const [rows, [count]]: [ItemRow[], Array<{ total: number }>] = await Promise.all([
+      this.dataSource.query(
+        `WITH pt AS (SELECT ${POINT} AS g)
+         SELECT ${ITEM_COLUMNS}, round(ST_Distance(s.location, pt.g))::int AS "distanceM"
+           FROM reports r JOIN stores s ON s.id = r.store_id, pt
+          WHERE ${where}
+          ORDER BY ${ORDER[params.sort]}
+          LIMIT $5 OFFSET $6`,
+        [...args, params.limit, params.offset],
+      ),
+      this.dataSource.query(
+        `WITH pt AS (SELECT ${POINT} AS g)
+         SELECT count(*)::int AS total
+           FROM reports r JOIN stores s ON s.id = r.store_id, pt
+          WHERE ${where}`,
+        args,
+      ),
+    ]);
+    return { items: rows.map(toItem), total: count?.total ?? 0 };
+  }
+
+  async findById(id: number): Promise<(ReportItemDto & { status: ReportStatus }) | null> {
+    const rows: Array<ItemRow & { status: ReportStatus }> = await this.dataSource.query(
+      `SELECT ${ITEM_COLUMNS}, NULL::int AS "distanceM", r.status
+         FROM reports r JOIN stores s ON s.id = r.store_id
+        WHERE r.id = $1`,
+      [id],
+    );
+    const row = rows[0];
+    return row ? { ...toItem(row), status: row.status } : null;
+  }
+}
+
+const POINT = `ST_SetSRID(ST_MakePoint($2, $1), 4326)::geography`;
+
+const ITEM_COLUMNS = `
+  r.id, r.price_ars AS "priceArs", r.presentation, r.quantity_g AS "quantityG",
+  r.price_per_kg AS "pricePerKg", r.quality,
+  to_char(r.observed_at, 'YYYY-MM-DD') AS "observedAt", r.created_at AS "createdAt",
+  r.reporter_name AS "reporterName",
+  s.id AS "storeId", s.name AS "storeName", s.address AS "storeAddress",
+  ST_Y(s.location::geometry) AS "storeLat", ST_X(s.location::geometry) AS "storeLng"`;
+
+const ORDER: Record<ReportSort, string> = {
+  price: `r.price_per_kg ASC, r.id DESC`,
+  distance: `s.location <-> pt.g, r.id DESC`,
+  recent: `r.observed_at DESC, r.created_at DESC, r.id DESC`,
+};
+
+interface ItemRow extends Omit<ReportItemDto, 'store' | 'createdAt'> {
+  createdAt: Date;
+  storeId: number;
+  storeName: string;
+  storeAddress: string;
+  storeLat: number;
+  storeLng: number;
+}
+
+function toItem(row: ItemRow): ReportItemDto {
+  const { storeId, storeName, storeAddress, storeLat, storeLng, createdAt, ...rest } = row;
+  return {
+    ...rest,
+    createdAt: createdAt.toISOString(),
+    store: {
+      id: storeId,
+      name: storeName,
+      address: storeAddress,
+      location: { lat: storeLat, lng: storeLng },
+    },
+  };
 }

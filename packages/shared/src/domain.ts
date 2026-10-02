@@ -65,3 +65,19 @@ export const SEARCH_RADIUS_M = { min: 100, max: 20_000, default: 3_000 } as cons
 export const REPORTER_NAME_MAX_LENGTH = 30;
 
 export const OBSERVED_AT_MAX_DAYS_AGO = 2;
+
+export const ReportSort = {
+  Price: 'price',
+  Distance: 'distance',
+  Recent: 'recent',
+} as const;
+
+export type ReportSort = (typeof ReportSort)[keyof typeof ReportSort];
+
+export const ACTIVE_REPORT_DAYS = 7;
+
+export const INDEX_PUBLISH_THRESHOLD = { reports: 5, stores: 3 } as const;
+
+export const INDEX_HISTORY_WEEKS = 8;
+
+export const COUNTRY_ZONE_ID = 'AR';

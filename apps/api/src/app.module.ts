@@ -5,6 +5,7 @@ import { DatabaseModule } from './database/database.module';
 import { DeviceModule } from './modules/device/device.module';
 import { GeoModule } from './modules/geo/geo.module';
 import { HealthController } from './modules/health/health.controller';
+import { PriceIndexModule } from './modules/price-index/price-index.module';
 import { RateLimitModule } from './modules/rate-limit/rate-limit.module';
 import { ReferenceModule } from './modules/reference/reference.module';
 import { ReportsModule } from './modules/reports/reports.module';
@@ -19,6 +20,7 @@ import { StoresModule } from './modules/stores/stores.module';
     StoresModule,
     ReportsModule,
     ReferenceModule,
+    PriceIndexModule,
   ],
   controllers: [HealthController],
   providers: [{ provide: APP_FILTER, useClass: HttpExceptionFilter }],
