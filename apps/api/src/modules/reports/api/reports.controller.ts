@@ -4,6 +4,7 @@ import type { CreateReportResponse, ReportItemDto, ReportListDto } from '@indice
 import type { Request, Response } from 'express';
 import { DeviceId } from '../../device/device-id.decorator';
 import { DeviceGuard } from '../../device/device.guard';
+import { OptionalDeviceId } from '../../device/optional-device-id.decorator';
 import { IdempotencyKey } from '../../idempotency/idempotency-key.decorator';
 import { sendStored } from '../../idempotency/send-stored';
 import { ReportsReadService } from '../application/reports-read.service';
@@ -20,13 +21,19 @@ export class ReportsController {
   ) {}
 
   @Get()
-  list(@Query() query: ListReportsQueryDto): Promise<ReportListDto> {
-    return this.reader.list(query);
+  list(
+    @Query() query: ListReportsQueryDto,
+    @OptionalDeviceId() deviceId: string | null,
+  ): Promise<ReportListDto> {
+    return this.reader.list({ ...query, deviceId });
   }
 
   @Get(':id')
-  detail(@Param() params: ReportParamsDto): Promise<ReportItemDto> {
-    return this.reader.detail(params.id);
+  detail(
+    @Param() params: ReportParamsDto,
+    @OptionalDeviceId() deviceId: string | null,
+  ): Promise<ReportItemDto> {
+    return this.reader.detail(params.id, deviceId);
   }
 
   @Post()

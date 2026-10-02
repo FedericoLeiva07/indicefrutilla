@@ -9,6 +9,7 @@ import { LoadStorePage } from './pages/load/LoadStorePage';
 import { NewStorePage } from './pages/load/NewStorePage';
 import { LocationPage } from './pages/LocationPage';
 import { MapPage } from './pages/MapPage';
+import { NationalIndexPage } from './pages/NationalIndexPage';
 
 export function App() {
   return (
@@ -17,6 +18,7 @@ export function App() {
       <Route path="/ubicacion" element={<LocationPage />} />
       <Route path="/ofertas" element={<ListPage />} />
       <Route path="/mapa" element={<MapPage />} />
+      <Route path="/indice" element={<NationalIndexPage />} />
       <Route path="/cargar" element={<LoadFlow />}>
         <Route index element={<LoadStorePage />} />
         <Route path="comercio-nuevo" element={<NewStorePage />} />

@@ -104,7 +104,7 @@ export function LocationPage() {
 
   const chooseCountry = () => {
     setLocation({ kind: 'country' });
-    finish();
+    navigate('/indice', { replace: true });
   };
 
   if (problem?.kind === 'outside') {

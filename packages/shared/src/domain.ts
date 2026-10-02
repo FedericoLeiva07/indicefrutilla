@@ -81,3 +81,17 @@ export const INDEX_PUBLISH_THRESHOLD = { reports: 5, stores: 3 } as const;
 export const INDEX_HISTORY_WEEKS = 8;
 
 export const COUNTRY_ZONE_ID = 'AR';
+
+export const FlagReason = {
+  PrecioFalso: 'precio_falso',
+  Duplicada: 'duplicada',
+  Spam: 'spam',
+} as const;
+
+export type FlagReason = (typeof FlagReason)[keyof typeof FlagReason];
+
+export const COMMUNITY_THRESHOLDS = { flagsToHide: 3, minVoteBalance: -3 } as const;
+
+export const INDEX_WINDOWS = [1, 4, 12] as const;
+
+export type IndexWindow = (typeof INDEX_WINDOWS)[number];

@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { APP_FILTER } from '@nestjs/core';
 import { HttpExceptionFilter } from './common/http-exception.filter';
 import { DatabaseModule } from './database/database.module';
+import { CommunityModule } from './modules/community/community.module';
 import { DeviceModule } from './modules/device/device.module';
 import { GeoModule } from './modules/geo/geo.module';
 import { HealthController } from './modules/health/health.controller';
@@ -21,6 +22,7 @@ import { StoresModule } from './modules/stores/stores.module';
     ReportsModule,
     ReferenceModule,
     PriceIndexModule,
+    CommunityModule,
   ],
   controllers: [HealthController],
   providers: [{ provide: APP_FILTER, useClass: HttpExceptionFilter }],

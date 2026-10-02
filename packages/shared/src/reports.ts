@@ -35,6 +35,25 @@ export interface ReportItemDto {
   createdAt: string;
   reporterName: string | null;
   distanceM: number | null;
+  votes: ReportVotesDto;
+  myVote: VoteValue | null;
+}
+
+export type VoteValue = 1 | -1;
+
+export interface ReportVotesDto {
+  up: number;
+  down: number;
+}
+
+export interface VoteResponse {
+  votes: ReportVotesDto;
+  myVote: VoteValue;
+  active: boolean;
+}
+
+export interface FlagResponse {
+  hidden: boolean;
 }
 
 export interface ReportListDto {
@@ -43,7 +62,7 @@ export interface ReportListDto {
   nextCursor: string | null;
 }
 
-export type ReportUnavailableReason = 'flagged' | 'expired';
+export type ReportUnavailableReason = 'flagged' | 'expired' | 'downvoted';
 
 export interface ReportUnavailableDetails {
   reason: ReportUnavailableReason;

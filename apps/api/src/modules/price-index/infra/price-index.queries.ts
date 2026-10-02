@@ -92,4 +92,48 @@ export class PriceIndexQueries {
       [weekStarts, zones.map((z) => z.level), zones.map((z) => z.id)],
     );
   }
+
+  async provinceWindow(from: string, to: string): Promise<WindowRow[]> {
+    return this.dataSource.query(
+      `WITH per_store_week AS (
+         SELECT s.province_id, r.store_id, date_trunc('week', r.observed_at) AS week, count(*) AS n,
+                percentile_cont(0.5) WITHIN GROUP (ORDER BY r.price_per_kg) AS ppk
+           FROM reports r
+           JOIN stores s ON s.id = r.store_id
+          WHERE r.status = 'active' AND r.quality = 'primera'
+            AND r.observed_at BETWEEN $1::date AND $2::date
+          GROUP BY s.province_id, r.store_id, week
+       )
+       SELECT COALESCE(province_id, '${COUNTRY_ZONE_ID}') AS "zoneId",
+              round(percentile_cont(0.5) WITHIN GROUP (ORDER BY ppk)::numeric, 2) AS "medianPpk",
+              round(percentile_cont(0.25) WITHIN GROUP (ORDER BY ppk)::numeric, 2) AS "p25Ppk",
+              round(percentile_cont(0.75) WITHIN GROUP (ORDER BY ppk)::numeric, 2) AS "p75Ppk",
+              sum(n)::int AS "sampleSize",
+              count(DISTINCT store_id)::int AS "storeCount"
+         FROM per_store_week
+        GROUP BY ROLLUP (province_id)`,
+      [from, to],
+    );
+  }
+
+  async history(level: IndexLevel, zoneId: string, from: string): Promise<IndexRow[]> {
+    return this.dataSource.query(
+      `SELECT to_char(week_start, 'YYYY-MM-DD') AS "weekStart", level, zone_id AS "zoneId",
+              median_ppk AS "medianPpk", p25_ppk AS "p25Ppk", p75_ppk AS "p75Ppk",
+              sample_size AS "sampleSize", store_count AS "storeCount", published
+         FROM price_index_weekly
+        WHERE level = $1 AND zone_id = $2 AND week_start >= $3::date
+        ORDER BY week_start`,
+      [level, zoneId, from],
+    );
+  }
+}
+
+export interface WindowRow {
+  zoneId: string;
+  medianPpk: number;
+  p25Ppk: number;
+  p75Ppk: number;
+  sampleSize: number;
+  storeCount: number;
 }

@@ -58,10 +58,11 @@ async function main(): Promise<void> {
   if (!url) throw new Error('Falta DATABASE_URL');
   const db = await new DataSource(typeormOptions(url)).initialize();
   try {
-    await db.query(
-      `DELETE FROM reports WHERE device_id = $1 OR store_id IN (SELECT id FROM stores WHERE created_by_device = $1)`,
-      [DEMO_DEVICE],
-    );
+    const demoReports = `SELECT id FROM reports
+                          WHERE device_id = $1 OR store_id IN (SELECT id FROM stores WHERE created_by_device = $1)`;
+    await db.query(`DELETE FROM report_votes WHERE report_id IN (${demoReports})`, [DEMO_DEVICE]);
+    await db.query(`DELETE FROM report_flags WHERE report_id IN (${demoReports})`, [DEMO_DEVICE]);
+    await db.query(`DELETE FROM reports WHERE id IN (${demoReports})`, [DEMO_DEVICE]);
     await db.query(`DELETE FROM stores WHERE created_by_device = $1`, [DEMO_DEVICE]);
     if (process.argv.includes('--reset')) {
       console.log('Datos de demo borrados');

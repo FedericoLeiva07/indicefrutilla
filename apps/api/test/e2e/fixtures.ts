@@ -18,7 +18,7 @@ export const CASEROS = { lat: -34.6045, lng: -58.5623 };
 
 export async function resetDatabase(db: DataSource): Promise<void> {
   await db.query(
-    `TRUNCATE idempotency_keys, reference_prices, price_index_weekly, reports, stores,
+    `TRUNCATE report_flags, report_votes, idempotency_keys, reference_prices, price_index_weekly, reports, stores,
               localities, departments, provinces RESTART IDENTITY CASCADE`,
   );
 }

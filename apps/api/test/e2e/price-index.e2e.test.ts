@@ -191,3 +191,125 @@ describe('price index (e2e)', () => {
     });
   });
 });
+
+describe('price index windows (e2e)', () => {
+  let app: NestExpressApplication;
+  let db: DataSource;
+  const current = weekStart(argentinaDate());
+
+  beforeAll(async () => {
+    app = await createTestApp();
+    db = app.get(DataSource);
+    await resetDatabase(db);
+    await seedTresDeFebrero(db);
+    await db.query(
+      `INSERT INTO provinces (id, name, centroid)
+       VALUES ('90', 'Tucumán', ST_SetSRID(ST_MakePoint(-65.2, -26.8), 4326)::geography)`,
+    );
+    const stores: number[] = [];
+    for (let i = 0; i < 3; i++) {
+      stores.push(
+        await insertStore(db, { name: `Comercio ${i}`, lat: -34.6 - i * 0.001, lng: -58.56 }),
+      );
+    }
+    for (const [i, id] of stores.entries()) {
+      for (let copy = 0; copy < 2; copy++) {
+        await insertReport(db, { storeId: id, pricePerKg: 5000 + i * 1000, observedAt: current });
+        await insertReport(db, {
+          storeId: id,
+          pricePerKg: 4000 + i * 1000,
+          observedAt: shiftDate(current, -7),
+        });
+      }
+      await insertReport(db, {
+        storeId: id,
+        pricePerKg: 3000,
+        observedAt: shiftDate(current, -21),
+      });
+    }
+    await app.get(PriceIndexService).recomputeRecent();
+  });
+
+  afterAll(async () => {
+    await app?.close();
+  });
+
+  const api = () => request(app.getHttpServer());
+
+  it('lista las provincias de la semana con variación y las sin datos al final (D3)', async () => {
+    const res = await api().get('/api/v1/index/provinces').expect(200);
+    expect(res.body).toMatchObject({ weeks: 1, from: current, to: shiftDate(current, 6) });
+    expect(res.body.country).toMatchObject({
+      published: true,
+      medianPpk: 6000,
+      weeklyChangePct: 20,
+    });
+    expect(res.body.provinces).toEqual([
+      {
+        provinceId: '06',
+        name: 'Buenos Aires',
+        published: true,
+        medianPpk: 6000,
+        p25Ppk: 5500,
+        p75Ppk: 6500,
+        sampleSize: 6,
+        storeCount: 3,
+        weeklyChangePct: 20,
+      },
+      {
+        provinceId: '90',
+        name: 'Tucumán',
+        published: false,
+        medianPpk: null,
+        p25Ppk: null,
+        p75Ppk: null,
+        sampleSize: 0,
+        storeCount: 0,
+        weeklyChangePct: null,
+      },
+    ]);
+  });
+
+  it('calcula las ventanas de 4 semanas sobre los precios por comercio y semana', async () => {
+    const res = await api().get('/api/v1/index/provinces').query({ weeks: 4 }).expect(200);
+    expect(res.body.from).toBe(shiftDate(current, -21));
+    expect(res.body.country).toMatchObject({
+      published: true,
+      medianPpk: 5000,
+      sampleSize: 15,
+      storeCount: 3,
+      weeklyChangePct: null,
+    });
+  });
+
+  it('valida la ventana', async () => {
+    await api().get('/api/v1/index/provinces').query({ weeks: 3 }).expect(400);
+  });
+
+  it('devuelve el histórico semanal de una zona', async () => {
+    const res = await api()
+      .get('/api/v1/index/history')
+      .query({ level: 'department', id: '06840', weeks: 3 })
+      .expect(200);
+    expect(res.body).toEqual([
+      expect.objectContaining({
+        weekStart: shiftDate(current, -14),
+        published: false,
+        medianPpk: null,
+      }),
+      expect.objectContaining({
+        weekStart: shiftDate(current, -7),
+        published: true,
+        medianPpk: 5000,
+        sampleSize: 6,
+      }),
+      expect.objectContaining({
+        weekStart: current,
+        published: true,
+        medianPpk: 6000,
+        sampleSize: 6,
+        storeCount: 3,
+      }),
+    ]);
+  });
+});

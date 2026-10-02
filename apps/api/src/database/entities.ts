@@ -1,3 +1,5 @@
+import { ReportFlagEntity } from '../modules/community/infra/report-flag.entity';
+import { ReportVoteEntity } from '../modules/community/infra/report-vote.entity';
 import { DepartmentEntity } from '../modules/geo/infra/department.entity';
 import { LocalityEntity } from '../modules/geo/infra/locality.entity';
 import { ProvinceEntity } from '../modules/geo/infra/province.entity';
@@ -16,4 +18,6 @@ export const entities = [
   PriceIndexWeeklyEntity,
   ReferencePriceEntity,
   IdempotencyKeyEntity,
+  ReportVoteEntity,
+  ReportFlagEntity,
 ];

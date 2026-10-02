@@ -7,6 +7,7 @@ import type {
   ReportStatus,
 } from '@indice/shared';
 import { DataSource, type EntityManager } from 'typeorm';
+import { ABOVE_VOTE_THRESHOLD, VOTES_LATERAL } from './report-votes.sql';
 
 export interface StoreZone {
   storeId: number;
@@ -72,40 +73,46 @@ export class ReportsQueries {
     since: string;
     offset: number;
     limit: number;
+    deviceId: string | null;
   }): Promise<{ items: ReportItemDto[]; total: number }> {
-    const where = `r.status = 'active' AND r.observed_at >= $4::date
-                   AND ST_DWithin(s.location, pt.g, $3)`;
-    const args = [params.lat, params.lng, params.radius, params.since];
+    const from = `FROM reports r JOIN stores s ON s.id = r.store_id CROSS JOIN pt ${VOTES_LATERAL('$5')}
+                 WHERE r.status = 'active' AND r.observed_at >= $4::date
+                   AND ST_DWithin(s.location, pt.g, $3) AND ${ABOVE_VOTE_THRESHOLD}`;
+    const args = [params.lat, params.lng, params.radius, params.since, params.deviceId];
     const [rows, [count]]: [ItemRow[], Array<{ total: number }>] = await Promise.all([
       this.dataSource.query(
         `WITH pt AS (SELECT ${POINT} AS g)
          SELECT ${ITEM_COLUMNS}, round(ST_Distance(s.location, pt.g))::int AS "distanceM"
-           FROM reports r JOIN stores s ON s.id = r.store_id, pt
-          WHERE ${where}
+           ${from}
           ORDER BY ${ORDER[params.sort]}
-          LIMIT $5 OFFSET $6`,
+          LIMIT $6 OFFSET $7`,
         [...args, params.limit, params.offset],
       ),
       this.dataSource.query(
         `WITH pt AS (SELECT ${POINT} AS g)
          SELECT count(*)::int AS total
-           FROM reports r JOIN stores s ON s.id = r.store_id, pt
-          WHERE ${where}`,
+           ${from}`,
         args,
       ),
     ]);
     return { items: rows.map(toItem), total: count?.total ?? 0 };
   }
 
-  async findById(id: number): Promise<(ReportItemDto & { status: ReportStatus }) | null> {
-    const rows: Array<ItemRow & { status: ReportStatus }> = await this.dataSource.query(
-      `SELECT ${ITEM_COLUMNS}, NULL::int AS "distanceM", r.status
-         FROM reports r JOIN stores s ON s.id = r.store_id
+  async findById(
+    id: number,
+    deviceId: string | null,
+    em: EntityManager = this.dataSource.manager,
+  ): Promise<(ReportItemDto & { status: ReportStatus; voteBalance: number }) | null> {
+    const rows: Array<ItemRow & { status: ReportStatus; voteBalance: number }> = await em.query(
+      `SELECT ${ITEM_COLUMNS}, NULL::int AS "distanceM", r.status, vt.balance AS "voteBalance"
+         FROM reports r JOIN stores s ON s.id = r.store_id ${VOTES_LATERAL('$2')}
         WHERE r.id = $1`,
-      [id],
+      [id, deviceId],
     );
     const row = rows[0];
-    return row ? { ...toItem(row), status: row.status } : null;
+    if (!row) return null;
+    const { status, voteBalance, ...itemRow } = row;
+    return { ...toItem(itemRow), status, voteBalance };
   }
 }
 
@@ -117,7 +124,8 @@ const ITEM_COLUMNS = `
   to_char(r.observed_at, 'YYYY-MM-DD') AS "observedAt", r.created_at AS "createdAt",
   r.reporter_name AS "reporterName",
   s.id AS "storeId", s.name AS "storeName", s.address AS "storeAddress",
-  ST_Y(s.location::geometry) AS "storeLat", ST_X(s.location::geometry) AS "storeLng"`;
+  ST_Y(s.location::geometry) AS "storeLat", ST_X(s.location::geometry) AS "storeLng",
+  vt.up AS "votesUp", vt.down AS "votesDown", vt.my_vote AS "myVote"`;
 
 const ORDER: Record<ReportSort, string> = {
   price: `r.price_per_kg ASC, r.id DESC`,
@@ -125,8 +133,10 @@ const ORDER: Record<ReportSort, string> = {
   recent: `r.observed_at DESC, r.created_at DESC, r.id DESC`,
 };
 
-interface ItemRow extends Omit<ReportItemDto, 'store' | 'createdAt'> {
+interface ItemRow extends Omit<ReportItemDto, 'store' | 'createdAt' | 'votes'> {
   createdAt: Date;
+  votesUp: number;
+  votesDown: number;
   storeId: number;
   storeName: string;
   storeAddress: string;
@@ -135,10 +145,21 @@ interface ItemRow extends Omit<ReportItemDto, 'store' | 'createdAt'> {
 }
 
 function toItem(row: ItemRow): ReportItemDto {
-  const { storeId, storeName, storeAddress, storeLat, storeLng, createdAt, ...rest } = row;
+  const {
+    storeId,
+    storeName,
+    storeAddress,
+    storeLat,
+    storeLng,
+    createdAt,
+    votesUp,
+    votesDown,
+    ...rest
+  } = row;
   return {
     ...rest,
     createdAt: createdAt.toISOString(),
+    votes: { up: votesUp, down: votesDown },
     store: {
       id: storeId,
       name: storeName,

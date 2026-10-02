@@ -54,6 +54,12 @@ export function HomePage() {
           ) : summary.data ? (
             <IndexCard summary={summary.data} />
           ) : null}
+          <Link
+            to="/indice"
+            className="mt-2 flex min-h-11 items-center justify-end text-sm font-semibold no-underline"
+          >
+            Ver el índice de todo el país
+          </Link>
         </div>
 
         {isPoint ? (
@@ -125,7 +131,7 @@ export function HomePage() {
           />
           {selected && (
             <div className="absolute inset-x-3 bottom-3 z-[1000]">
-              <OfferSheet report={selected} onClose={() => setSelected(null)} />
+              <OfferSheet key={selected.id} report={selected} onClose={() => setSelected(null)} />
             </div>
           )}
         </aside>

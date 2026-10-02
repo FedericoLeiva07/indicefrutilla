@@ -4,7 +4,12 @@ import {
   COUNTRY_ZONE_ID,
   ErrorCode,
   INDEX_HISTORY_WEEKS,
+  INDEX_PUBLISH_THRESHOLD,
+  type IndexHistoryRowDto,
   IndexLevel,
+  type IndexWindow,
+  type ProvinceIndexDto,
+  type ProvinceIndexRowDto,
   type IndexHistoryPointDto,
   type IndexLevelDto,
   type IndexSummaryDto,
@@ -15,7 +20,7 @@ import { DataSource } from 'typeorm';
 import { AppException } from '../../../common/app-exception';
 import { ReferenceService } from '../../reference/application/reference.service';
 import { ReferenceQueries } from '../../reference/infra/reference.queries';
-import { type IndexRow, PriceIndexQueries } from '../infra/price-index.queries';
+import { type IndexRow, PriceIndexQueries, type WindowRow } from '../infra/price-index.queries';
 
 interface Zone {
   level: IndexLevel;
@@ -73,6 +78,59 @@ export class PriceIndexService {
     };
   }
 
+  async provinces(weeks: IndexWindow, now: Date = new Date()): Promise<ProvinceIndexDto> {
+    const current = weekStart(argentinaDate(now));
+    const from = shiftDate(current, -7 * (weeks - 1));
+    const to = shiftDate(current, 6);
+    const [rows, previousRows, provinces] = await Promise.all([
+      this.queries.provinceWindow(from, to),
+      weeks === 1
+        ? this.queries.provinceWindow(shiftDate(current, -7), shiftDate(current, -1))
+        : Promise.resolve([] as WindowRow[]),
+      this.dataSource.query(`SELECT id, name FROM provinces`) as Promise<
+        Array<{ id: string; name: string }>
+      >,
+    ]);
+    const byZone = (list: WindowRow[], id: string) => list.find((r) => r.zoneId === id);
+    const toRow = (id: string) =>
+      windowRow(byZone(rows, id), weeks === 1 ? byZone(previousRows, id) : undefined);
+
+    const provinceRows: ProvinceIndexRowDto[] = provinces
+      .map((p) => ({ provinceId: p.id, name: p.name, ...toRow(p.id) }))
+      .sort(
+        (a, b) =>
+          Number(b.published) - Number(a.published) ||
+          (a.medianPpk ?? 0) - (b.medianPpk ?? 0) ||
+          a.name.localeCompare(b.name, 'es'),
+      );
+    return { weeks, from, to, country: toRow(COUNTRY.id), provinces: provinceRows };
+  }
+
+  async history(
+    level: IndexLevel,
+    zoneId: string,
+    weeks: number,
+    now: Date = new Date(),
+  ): Promise<IndexHistoryRowDto[]> {
+    const current = weekStart(argentinaDate(now));
+    const from = shiftDate(current, -7 * (weeks - 1));
+    const rows = await this.queries.history(level, zoneId, from);
+    return Array.from({ length: weeks }, (_, i) => {
+      const week = shiftDate(from, 7 * i);
+      const row = rows.find((r) => r.weekStart === week);
+      const published = row?.published ?? false;
+      return {
+        weekStart: week,
+        published,
+        medianPpk: published ? (row?.medianPpk ?? null) : null,
+        p25Ppk: published ? (row?.p25Ppk ?? null) : null,
+        p75Ppk: published ? (row?.p75Ppk ?? null) : null,
+        sampleSize: row?.sampleSize ?? 0,
+        storeCount: row?.storeCount ?? 0,
+      };
+    });
+  }
+
   private async referenceHistory(weeks: string[]): Promise<IndexHistoryPointDto[]> {
     const medians = await this.referenceQueries.weeklyMedians(weeks[0]!);
     return weeks.map((w) => ({ weekStart: w, medianPpk: medians.get(w) ?? null }));
@@ -124,6 +182,31 @@ function toLevel(
     medianPpk: median,
     p25Ppk: published ? (row?.p25Ppk ?? null) : null,
     p75Ppk: published ? (row?.p75Ppk ?? null) : null,
+    sampleSize: row?.sampleSize ?? 0,
+    storeCount: row?.storeCount ?? 0,
+    weeklyChangePct:
+      median !== null && previousMedian
+        ? Math.round(((median - previousMedian) / previousMedian) * 100)
+        : null,
+  };
+}
+
+function windowRow(
+  row: WindowRow | undefined,
+  previous: WindowRow | undefined,
+): Omit<ProvinceIndexRowDto, 'provinceId' | 'name'> {
+  const isPublished = (r: WindowRow | undefined): r is WindowRow =>
+    !!r &&
+    r.sampleSize >= INDEX_PUBLISH_THRESHOLD.reports &&
+    r.storeCount >= INDEX_PUBLISH_THRESHOLD.stores;
+  const published = isPublished(row);
+  const median = published ? row.medianPpk : null;
+  const previousMedian = isPublished(previous) ? previous.medianPpk : null;
+  return {
+    published,
+    medianPpk: median,
+    p25Ppk: published ? row.p25Ppk : null,
+    p75Ppk: published ? row.p75Ppk : null,
     sampleSize: row?.sampleSize ?? 0,
     storeCount: row?.storeCount ?? 0,
     weeklyChangePct:

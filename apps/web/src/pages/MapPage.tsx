@@ -61,7 +61,7 @@ export function MapPage() {
 
       {selected ? (
         <div className="absolute inset-x-0 bottom-0 z-[1000] mx-auto max-w-xl">
-          <OfferSheet report={selected} onClose={() => setSelected(null)} />
+          <OfferSheet key={selected.id} report={selected} onClose={() => setSelected(null)} />
         </div>
       ) : (
         <LoadPriceButton online={online} />

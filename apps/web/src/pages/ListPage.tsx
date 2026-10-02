@@ -1,8 +1,9 @@
-import type { ReportSort } from '@indice/shared';
+import type { ReportItemDto, ReportSort } from '@indice/shared';
 import { useState } from 'react';
 import { Link, Navigate } from 'react-router';
 import { EmptyNearby } from '../components/EmptyNearby';
 import { LoadPriceButton } from '../components/LoadPriceButton';
+import { OfferSheet } from '../components/OfferSheet';
 import { LocationChip } from '../components/LocationChip';
 import { ReportRow, ReportRowSkeleton } from '../components/ReportRow';
 import { ErrorState, OfflineBanner } from '../components/States';
@@ -30,6 +31,7 @@ export function ListPage() {
   const online = useOnline();
   const [sort, setSort] = useState<ReportSort>(initialSort);
   const reports = useReports(location, sort);
+  const [selected, setSelected] = useState<ReportItemDto | null>(null);
 
   if (!location) return <Navigate to="/ubicacion" replace />;
   if (location.kind !== 'point') return <Navigate to="/" replace />;
@@ -98,6 +100,7 @@ export function ListPage() {
                 report={report}
                 highlight={sort === 'price' && i === 0}
                 showQuality
+                onSelect={setSelected}
               />
             ))}
           </ul>
@@ -125,7 +128,21 @@ export function ListPage() {
       >
         Volver al inicio
       </Link>
-      {!(total === 0 && !!reports.data && online) && <LoadPriceButton online={online} />}
+      {selected ? (
+        <>
+          <button
+            type="button"
+            aria-label="Cerrar la ficha"
+            onClick={() => setSelected(null)}
+            className="fixed inset-0 z-[1000] cursor-default border-0 bg-ink/45"
+          />
+          <div className="fixed inset-x-0 bottom-0 z-[1001] mx-auto max-w-xl">
+            <OfferSheet key={selected.id} report={selected} onClose={() => setSelected(null)} />
+          </div>
+        </>
+      ) : (
+        !(total === 0 && !!reports.data && online) && <LoadPriceButton online={online} />
+      )}
     </main>
   );
 }
