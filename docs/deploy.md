@@ -80,7 +80,7 @@ La primera vez, el _pre-deploy_ aplica las migraciones, carga las zonas de Geore
 | `API_PROXY_SECRET`        | El mismo valor que `PROXY_SECRET` en Railway                           |
 | `VITE_TURNSTILE_SITE_KEY` | La _site key_ del widget de Turnstile                                  |
 
-`VITE_API_URL` no se define: la web usa `/api/v1` en su mismo dominio.
+La web siempre llama a `/api/v1` en su mismo dominio; no hay forma de apuntarla directo a Railway, que respondería 403.
 
 4. Agregar el dominio de la web al widget de Turnstile.
 

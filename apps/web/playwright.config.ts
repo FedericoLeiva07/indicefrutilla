@@ -24,6 +24,6 @@ export default defineConfig({
     port: PORT,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
-    env: { VITE_TURNSTILE_SITE_KEY: '1x00000000000000000000AA', VITE_API_URL: '/api/v1' },
+    env: { VITE_TURNSTILE_SITE_KEY: '1x00000000000000000000AA' },
   },
 });
