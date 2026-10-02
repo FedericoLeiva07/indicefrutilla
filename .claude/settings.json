@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "deny": [
+      "mcp__claude-in-chrome",
+      "Read(~/.ssh/**)",
+      "Read(~/.gnupg/**)",
+      "Read(~/.aws/**)",
+      "Read(~/.config/google-chrome/**)",
+      "Read(~/.config/chromium/**)",
+      "Read(~/.mozilla/**)",
+      "Read(~/.thunderbird/**)",
+      "Read(~/.local/share/keyrings/**)",
+      "Read(~/Descargas/**)",
+      "Read(~/Imágenes/**)",
+      "Read(~/Escritorio/**)",
+      "Bash(ssh:*)",
+      "Bash(scp:*)"
+    ]
+  }
+}
