@@ -15,6 +15,7 @@ const EnvSchema = z
       .enum(['true', 'false'])
       .default('false')
       .transform((v) => v === 'true'),
+    PROXY_SECRET: z.string().min(32).optional(),
     TRUST_PROXY_HOPS: z.coerce.number().int().min(0).default(0),
     CORS_ORIGIN: z.string().default('http://localhost:5173'),
     DB_POOL_SIZE: z.coerce.number().int().min(1).max(100).default(20),
@@ -35,6 +36,14 @@ const EnvSchema = z
   .refine((env) => env.NODE_ENV !== 'production' || !!env.REDIS_URL, {
     path: ['REDIS_URL'],
     message: 'es obligatoria en producción',
+  })
+  .refine((env) => env.NODE_ENV !== 'production' || !!env.PROXY_SECRET, {
+    path: ['PROXY_SECRET'],
+    message: 'es obligatoria en producción',
+  })
+  .refine((env) => !(env.PROXY_SECRET && env.TRUST_CLOUDFLARE), {
+    path: ['TRUST_CLOUDFLARE'],
+    message: 'no se puede combinar con PROXY_SECRET',
   })
   .refine(
     (env) =>

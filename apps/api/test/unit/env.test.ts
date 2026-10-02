@@ -36,7 +36,12 @@ describe('loadEnv', () => {
   });
 
   it('en producción exige Redis y una clave real de Turnstile', () => {
-    const prod = { ...base, NODE_ENV: 'production', REDIS_URL: 'redis://r:6379' };
+    const prod = {
+      ...base,
+      NODE_ENV: 'production',
+      REDIS_URL: 'redis://r:6379',
+      PROXY_SECRET: 'p'.repeat(32),
+    };
     expect(() => loadEnv({ ...prod, REDIS_URL: undefined })).toThrow(/REDIS_URL/);
     expect(() =>
       loadEnv({ ...prod, TURNSTILE_SECRET_KEY: '1x0000000000000000000000000000000AA' }),
@@ -44,5 +49,20 @@ describe('loadEnv', () => {
     expect(loadEnv({ ...prod, TURNSTILE_SECRET_KEY: '0x4AAAAAAA-real-secret' }).NODE_ENV).toBe(
       'production',
     );
+  });
+
+  it('en producción exige el secreto del proxy, largo y sin Cloudflare', () => {
+    const prod = {
+      ...base,
+      NODE_ENV: 'production',
+      REDIS_URL: 'redis://r:6379',
+      TURNSTILE_SECRET_KEY: '0x4AAAAAAA-real-secret',
+    };
+    expect(() => loadEnv(prod)).toThrow(/PROXY_SECRET/);
+    expect(() => loadEnv({ ...prod, PROXY_SECRET: 'corto' })).toThrow(/PROXY_SECRET/);
+    expect(() =>
+      loadEnv({ ...prod, PROXY_SECRET: 'p'.repeat(32), TRUST_CLOUDFLARE: 'true' }),
+    ).toThrow(/TRUST_CLOUDFLARE/);
+    expect(loadEnv({ ...prod, PROXY_SECRET: 'p'.repeat(32) }).PROXY_SECRET).toBe('p'.repeat(32));
   });
 });

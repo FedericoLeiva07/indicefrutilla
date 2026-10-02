@@ -3,7 +3,7 @@ import { ErrorCode } from '@indice/shared';
 import type { Request } from 'express';
 import { AppException } from '../../common/app-exception';
 import { type Env, InjectEnv } from '../../config/config.module';
-import { clientIp } from '../device/client-ip';
+import { clientIp, clientIpHeader } from '../device/client-ip';
 import { TurnstileVerifier } from './turnstile.verifier';
 
 @Injectable()
@@ -14,7 +14,7 @@ export class TurnstileService {
   ) {}
 
   async assertHuman(token: string, req: Request): Promise<void> {
-    const ok = await this.verifier.verify(token, clientIp(req, this.env.TRUST_CLOUDFLARE));
+    const ok = await this.verifier.verify(token, clientIp(req, clientIpHeader(this.env)));
     if (!ok) {
       throw new AppException(
         ErrorCode.TurnstileFailed,

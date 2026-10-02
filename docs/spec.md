@@ -437,7 +437,7 @@ Aplicados el 2026-10-01:
 3. **Frontend de consulta.** Ubicación (E5, E6), Inicio con summary (E1, E2), lista y mapa (E4), persistencia sin conexión (E3).
 4. **Frontend de carga.** Pasos 1–3 con borrador (C1–C6, C9–C12).
 5. **Índice y comunidad.** Job semanal y endpoints (D3, histórico), votos y denuncias (E7–E9).
-6. **Lanzamiento.** PWA, e2e con Playwright que cubra cada estado de §9, prueba de carga contra los límites, deploy (API detrás de Cloudflare, web en Vercel, Postgres gestionado con PostGIS).
+6. **Lanzamiento.** PWA, e2e con Playwright que cubra cada estado de §9, prueba de carga contra los límites, deploy (Postgres con PostGIS, Redis, API y worker en Railway; web en Vercel, que hace de proxy de la API con un secreto compartido; ver `docs/deploy.md`).
 
 ---
 

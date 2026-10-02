@@ -12,6 +12,7 @@ export const ErrorCode = {
   OutsideCoverage: 'OUTSIDE_COVERAGE',
   IdempotencyConflict: 'IDEMPOTENCY_CONFLICT',
   NotFound: 'NOT_FOUND',
+  Forbidden: 'FORBIDDEN',
   Internal: 'INTERNAL',
 } as const;
 

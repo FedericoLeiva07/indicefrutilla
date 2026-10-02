@@ -7,7 +7,9 @@ export class RedisConnection implements OnApplicationShutdown {
   readonly client: Redis | null;
 
   constructor(@InjectEnv() env: Env) {
-    this.client = env.REDIS_URL ? new Redis(env.REDIS_URL, { maxRetriesPerRequest: 2 }) : null;
+    this.client = env.REDIS_URL
+      ? new Redis(env.REDIS_URL, { maxRetriesPerRequest: 2, family: 0 })
+      : null;
   }
 
   async onApplicationShutdown(): Promise<void> {

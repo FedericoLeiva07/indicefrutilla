@@ -38,4 +38,4 @@ Playwright necesita Chromium una vez: `pnpm --filter @indice/web exec playwright
 
 ## Deploy
 
-Ver [docs/deploy.md](docs/deploy.md): imagen de la API y el worker, migraciones, variables de entorno, Vercel y Cloudflare.
+Ver [docs/deploy.md](docs/deploy.md): Railway (Postgres con PostGIS, Redis, API y worker), Vercel como proxy de la API y variables de entorno.

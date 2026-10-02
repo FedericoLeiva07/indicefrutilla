@@ -1,78 +1,101 @@
 # Deploy
 
-Arquitectura del spec (§10, semana 6): API detrás de Cloudflare, web en Vercel, Postgres gestionado con PostGIS. Este repo deja todo listo para desplegar; **crear las cuentas y hacer el primer deploy lo hace una persona**.
+Postgres con PostGIS, Redis, la API y el worker van en **Railway**; la web, en **Vercel**. Este repo deja todo listo; **crear las cuentas y hacer el primer deploy lo hace una persona**.
 
-## Qué hace falta
+## Cómo queda protegida la API
 
-| Pieza                | Para qué                                 | Requisito                                                                  |
-| -------------------- | ---------------------------------------- | -------------------------------------------------------------------------- |
-| Postgres gestionado  | Datos                                    | PostgreSQL 16 con las extensiones `postgis` y `pg_trgm`                    |
-| Redis gestionado     | Límites por segundo y por minuto (§6)    | Cualquier Redis 6+ accesible desde la API                                  |
-| Host de contenedores | API y worker                             | Corre la imagen de `apps/api/Dockerfile`; dos procesos con la misma imagen |
-| Cloudflare           | DNS, proxy delante de la API y Turnstile | Zona del dominio y un widget de Turnstile (modo _managed_)                 |
-| Vercel               | Web                                      | Proyecto apuntando a la raíz del repo (usa `vercel.json`)                  |
-
-## 1. Base de datos
-
-1. Crear la base y habilitar las extensiones (las migraciones las crean si el usuario tiene permiso).
-2. Correr las migraciones con la imagen:
-
-```bash
-docker run --rm -e DATABASE_URL=… -e IP_HASH_SECRET=… -e TURNSTILE_SECRET_KEY=… -e REDIS_URL=… indice-api node dist/migrate.js
+```
+navegador ──► Vercel (web + middleware /api/*) ──► Railway: api ──► postgis, redis (red privada)
+                     agrega X-Proxy-Secret                  worker ──┘
+                     y X-Client-IP
 ```
 
-3. Cargar las zonas de Georef y el histórico del Mercado Central desde una máquina con el repo (usan `tsx`, que no está en la imagen):
+- La web llama a `/api/v1/...` en su propio dominio. El middleware de Vercel (`apps/web/middleware.ts`) reenvía a Railway agregando `X-Proxy-Secret` y la IP real del visitante en `X-Client-IP`. Pisa cualquier `X-Client-IP` que mande el navegador.
+- La API rechaza con `403 FORBIDDEN` todo lo que no traiga el secreto, salvo `GET /api/v1/health` (lo usa el health check de Railway). La URL pública de Railway no sirve para usar la API directamente.
+- El middleware rechaza pedidos de otros sitios (`Sec-Fetch-Site: cross-site`), así que otra página no puede usar la API desde el navegador de sus visitantes.
+- Postgres y Redis no tienen acceso público: solo se alcanzan por la red privada de Railway.
+- Lo que no se puede evitar es que alguien use la API desde un script pasando por el dominio de la web, porque todo lo que hace el navegador se puede repetir. Contra eso están los límites por IP y por dispositivo (§6) y Turnstile en las cargas.
 
-```bash
-DATABASE_URL=… pnpm --filter @indice/api seed:geo
-DATABASE_URL=… pnpm --filter @indice/api import:reference --all
-```
+## 1. Railway
 
-## 2. API y worker
+Un proyecto con cuatro servicios.
 
-Imagen: `docker build -f apps/api/Dockerfile -t indice-api .` (desde la raíz del repo).
+### postgis
 
-| Proceso | Comando                           | Notas                                                                                         |
-| ------- | --------------------------------- | --------------------------------------------------------------------------------------------- |
-| API     | `node dist/main.js` (por defecto) | Expone `PORT` (3000). Health check: `GET /api/v1/health`                                      |
-| Worker  | `node dist/worker.js`             | Una sola instancia: Mercado Central (14 y 18 h), índice (cada hora), limpieza de idempotencia |
+1. _New → Docker Image_: `postgis/postgis:16-3.4`.
+2. Volumen montado en `/var/lib/postgresql/data`.
+3. Variables:
 
-Variables de entorno (ver `.env.example`):
+| Variable            | Valor                             |
+| ------------------- | --------------------------------- |
+| `POSTGRES_USER`     | `indice`                          |
+| `POSTGRES_PASSWORD` | `openssl rand -hex 24`            |
+| `POSTGRES_DB`       | `indice`                          |
+| `PGDATA`            | `/var/lib/postgresql/data/pgdata` |
 
-| Variable                                  | Producción                                                              |
-| ----------------------------------------- | ----------------------------------------------------------------------- |
-| `NODE_ENV`                                | `production`                                                            |
-| `DATABASE_URL`                            | URL del Postgres gestionado                                             |
-| `DB_POOL_SIZE`                            | 20 por instancia (ajustar al límite de conexiones del proveedor)        |
-| `IP_HASH_SECRET`                          | `openssl rand -hex 32`; no cambiarlo después (rompe los límites por IP) |
-| `REDIS_URL`                               | Obligatoria en producción                                               |
-| `TURNSTILE_SECRET_KEY`                    | La clave secreta real (la API rechaza las de prueba en producción)      |
-| `TRUST_CLOUDFLARE`                        | `true`: la IP real sale de `CF-Connecting-IP`                           |
-| `TRUST_PROXY_HOPS`                        | Proxies propios del host entre Cloudflare y la app (normalmente 1)      |
-| `CORS_ORIGIN`                             | El dominio de la web, por ejemplo `https://<dominio-de-la-web>`         |
-| `PLAUSIBLE_MIN_PPK` / `PLAUSIBLE_MAX_PPK` | Respaldo del rango plausible sin datos del Mercado Central              |
+4. **Sin dominio público ni TCP proxy.**
 
-Importante: la API tiene que aceptar tráfico **solo desde Cloudflare** (reglas de firewall del host o un túnel). Si no, cualquiera puede mandar un `CF-Connecting-IP` falso y saltear los límites por IP.
+### redis
 
-## 3. Web
+1. _New → Database → Redis_.
+2. En _Settings → Networking_, **quitar el TCP proxy público** si lo creó.
 
-En Vercel, importar el repo con la raíz como _Root Directory_. `vercel.json` ya define instalación, build, salida, reescritura de rutas de la SPA y cabeceras de caché (`sw.js` sin caché, `assets/` inmutables).
+### api
 
-| Variable                  | Valor                                                                   |
-| ------------------------- | ----------------------------------------------------------------------- |
-| `VITE_API_URL`            | URL pública de la API, por ejemplo `https://<dominio-de-la-api>/api/v1` |
-| `VITE_TURNSTILE_SITE_KEY` | La _site key_ del widget de Turnstile                                   |
+1. _New → GitHub repo_, este repo, sin _Root Directory_ (el Dockerfile copia `packages/shared`).
+2. _Settings → Config-as-code_: `apps/api/railway.api.json`. Define el Dockerfile, `node dist/migrate.js` como _pre-deploy_, el health check y el reinicio.
+3. _Settings → Networking_: generar un dominio público (`*.up.railway.app`). Es lo que va en `API_ORIGIN` de Vercel.
+4. Variables:
 
-Agregar el dominio de la web al widget de Turnstile y a `CORS_ORIGIN` de la API.
+| Variable               | Valor                                                                                   |
+| ---------------------- | --------------------------------------------------------------------------------------- |
+| `NODE_ENV`             | `production`                                                                            |
+| `DATABASE_URL`         | `postgres://indice:${{postgis.POSTGRES_PASSWORD}}@postgis.railway.internal:5432/indice` |
+| `REDIS_URL`            | `${{redis.REDIS_URL}}` (la interna, `redis.railway.internal`)                           |
+| `PROXY_SECRET`         | `openssl rand -hex 32`. El mismo valor va en Vercel como `API_PROXY_SECRET`             |
+| `IP_HASH_SECRET`       | `openssl rand -hex 32`. No cambiarlo después (rompe los límites por IP)                 |
+| `TURNSTILE_SECRET_KEY` | La clave secreta real del widget (la API rechaza las de prueba en producción)           |
+| `CORS_ORIGIN`          | El dominio de la web, por ejemplo `https://<dominio-de-la-web>`                         |
+| `DB_POOL_SIZE`         | `10`                                                                                    |
+
+`PORT` lo pone Railway. `TRUST_CLOUDFLARE` queda en `false`: no se puede combinar con `PROXY_SECRET`.
+
+La primera vez, el _pre-deploy_ aplica las migraciones, carga las zonas de Georef y el histórico del Mercado Central (unos segundos). En los deploys siguientes solo aplica migraciones nuevas.
+
+### worker
+
+1. Mismo repo, _Config-as-code_: `apps/api/railway.worker.json` (`node dist/worker.js`).
+2. **Sin dominio público.** Una sola réplica: corre el Mercado Central (14 y 18 h), el índice (cada hora) y la limpieza de idempotencia.
+3. Las mismas variables que `api`. Conviene definirlas como _Shared Variables_ del proyecto o referenciarlas (`${{api.PROXY_SECRET}}`).
+
+## 2. Vercel
+
+1. Importar el repo con **Root Directory `apps/web`** (deja activado _Include files outside the root directory_; hace falta `packages/shared`).
+2. `apps/web/vercel.json` define instalación, build, salida, reescritura de la SPA y cabeceras de caché.
+3. Variables:
+
+| Variable                  | Valor                                                                  |
+| ------------------------- | ---------------------------------------------------------------------- |
+| `API_ORIGIN`              | El dominio público del servicio `api`: `https://<algo>.up.railway.app` |
+| `API_PROXY_SECRET`        | El mismo valor que `PROXY_SECRET` en Railway                           |
+| `VITE_TURNSTILE_SITE_KEY` | La _site key_ del widget de Turnstile                                  |
+
+`VITE_API_URL` no se define: la web usa `/api/v1` en su mismo dominio.
+
+4. Agregar el dominio de la web al widget de Turnstile.
+
+## 3. Rotar el secreto del proxy
+
+Cambiar `PROXY_SECRET` en Railway (`api` y `worker`) y `API_PROXY_SECRET` en Vercel, y redeployar los dos. Mientras uno tiene el valor nuevo y el otro el viejo, la API responde 403.
 
 ## 4. Verificación después del deploy
 
-- `GET /api/v1/health` responde `{"status":"ok"}`.
-- `GET /api/v1/reference/latest` trae `source: "Mercado Central de Buenos Aires"`.
+- `curl https://<api>.up.railway.app/api/v1/health` responde `{"status":"ok"}`.
+- `curl https://<api>.up.railway.app/api/v1/geo/provinces` responde `403` con `FORBIDDEN`.
+- `curl https://<web>/api/v1/reference/latest` trae `source: "Mercado Central de Buenos Aires"`.
 - En la web: elegir una zona, ver Inicio, cargar un precio de prueba y borrarlo a mano de la base.
-- Los logs del worker muestran la importación de las 14 h y el recálculo horario del índice.
+- Los logs del _pre-deploy_ muestran Georef y el Mercado Central; los del worker, el recálculo horario del índice.
 
-## Decisiones abiertas para el lanzamiento
+## Pendiente para el lanzamiento
 
-- Proveedores concretos de Postgres, Redis y contenedores (el código no depende de ninguno).
 - Tiles del mapa: hoy usa `tile.openstreetmap.org`, cuya política de uso no admite tráfico de producción alto. Para el lanzamiento conviene un proveedor de tiles (MapTiler, Stadia, Protomaps) y cambiar la URL en `PriceMap.tsx` y `PinPicker.tsx`.
