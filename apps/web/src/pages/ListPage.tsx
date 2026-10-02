@@ -7,6 +7,7 @@ import { OfferSheet } from '../components/OfferSheet';
 import { LocationChip } from '../components/LocationChip';
 import { ReportRow, ReportRowSkeleton } from '../components/ReportRow';
 import { ErrorState, OfflineBanner } from '../components/States';
+import { PageHeader } from '../components/PageHeader';
 import { ViewToggle } from '../components/ViewToggle';
 import { useUserLocation } from '../lib/location-context';
 import { useOnline } from '../lib/online';
@@ -46,7 +47,11 @@ export function ListPage() {
   };
 
   return (
-    <main className="mx-auto flex max-w-xl flex-col gap-3.5 pt-4 pb-28">
+    <main className="mx-auto flex max-w-xl flex-col gap-3.5 pt-3 pb-28">
+      <div className="px-4">
+        <PageHeader />
+      </div>
+      <h1 className="sr-only">Ofertas cerca tuyo</h1>
       <div className="flex items-center gap-2 px-4">
         <LocationChip location={location} withRadius className="flex-1 rounded-2xl" />
         <ViewToggle />

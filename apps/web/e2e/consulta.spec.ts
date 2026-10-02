@@ -204,6 +204,19 @@ test.describe('Lista y mapa (3, 4)', () => {
       /google\.com\/maps\/dir/,
     );
   });
+  test('desde el mapa se vuelve al inicio con la flecha o el logo', async ({ page }) => {
+    await prepare(page);
+    await page.goto('/mapa');
+    await page.getByRole('link', { name: 'Volver' }).click();
+    await expect(page).toHaveURL(/\/$/);
+    await page.getByRole('link', { name: 'Ver todas' }).click();
+    await page.getByRole('link', { name: 'Mapa' }).click();
+    await page.getByRole('button', { name: 'Volver' }).click();
+    await expect(page).toHaveURL(/\/$/);
+    await page.goto('/ofertas');
+    await page.getByRole('link', { name: 'Índice, inicio' }).click();
+    await expect(page).toHaveURL(/\/$/);
+  });
 });
 
 test.describe('Comunidad (E7, E8, E9)', () => {

@@ -4,8 +4,8 @@ import {
   type ProvinceIndexRowDto,
 } from '@indice/shared';
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router';
-import { ChevronLeftIcon } from '../components/Icons';
+import { useNavigate } from 'react-router';
+import { PageHeader } from '../components/PageHeader';
 import { ErrorState } from '../components/States';
 import { useProvinceIndex } from '../lib/community-api';
 import { formatArs, weekLabel } from '../lib/format';
@@ -59,13 +59,7 @@ export function NationalIndexPage() {
 
   return (
     <main className="mx-auto flex max-w-3xl flex-col gap-4 px-5 pt-3 pb-10">
-      <Link
-        to="/"
-        aria-label="Volver"
-        className="-ml-2.5 flex size-11 items-center justify-center text-ink"
-      >
-        <ChevronLeftIcon size={22} />
-      </Link>
+      <PageHeader />
       <h1 className="m-0 font-display text-[30px] leading-tight font-extrabold tracking-tight">
         Índice nacional
       </h1>

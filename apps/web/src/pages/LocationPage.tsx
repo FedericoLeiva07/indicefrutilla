@@ -1,6 +1,8 @@
 import { useId, useState } from 'react';
-import { Link, useNavigate } from 'react-router';
-import { AlertIcon, ChevronLeftIcon, GlobeIcon, TargetIcon } from '../components/Icons';
+import { useNavigate } from 'react-router';
+import { AlertIcon, GlobeIcon, TargetIcon } from '../components/Icons';
+import { Logo } from '../components/Logo';
+import { PageHeader } from '../components/PageHeader';
 import { ApiError, toApiError } from '../lib/api';
 import { formatDistance } from '../lib/format';
 import { currentPosition, type GeolocationFailure, GeolocationError } from '../lib/geolocation';
@@ -143,15 +145,11 @@ export function LocationPage() {
   return (
     <main className="mx-auto flex min-h-dvh max-w-xl flex-col gap-5 px-5 pt-3 pb-7">
       {location ? (
-        <Link
-          to="/"
-          aria-label="Volver"
-          className="-ml-2.5 flex size-11 items-center justify-center text-ink"
-        >
-          <ChevronLeftIcon size={22} />
-        </Link>
+        <PageHeader />
       ) : (
-        <div className="h-2" />
+        <header className="flex min-h-11 items-center">
+          <Logo />
+        </header>
       )}
       <div className="flex flex-col gap-2">
         <h1 className="m-0 font-display text-[30px] leading-tight font-extrabold tracking-tight">

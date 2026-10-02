@@ -6,6 +6,7 @@ import { LocationChip } from '../components/LocationChip';
 import { OfferSheet } from '../components/OfferSheet';
 import { LazyPriceMap } from '../components/LazyPriceMap';
 import { ErrorState, OfflineBanner } from '../components/States';
+import { PageHeader } from '../components/PageHeader';
 import { ViewToggle } from '../components/ViewToggle';
 import { useUserLocation } from '../lib/location-context';
 import { useOnline } from '../lib/online';
@@ -34,6 +35,7 @@ export function MapPage() {
         className="absolute inset-0"
       />
       <div className="absolute inset-x-4 top-4 z-[1000] mx-auto flex max-w-xl flex-col gap-2.5">
+        <PageHeader floating />
         <div className="flex items-center gap-2">
           <LocationChip
             location={location}

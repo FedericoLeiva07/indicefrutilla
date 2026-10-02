@@ -11,10 +11,10 @@ export function ViewToggle({ className = '' }: { className?: string }) {
       aria-label="Vista"
       className={`grid grid-cols-2 rounded-2xl border border-line bg-white p-1 ${className}`}
     >
-      <NavLink to="/mapa" className={item}>
+      <NavLink to="/mapa" replace className={item}>
         Mapa
       </NavLink>
-      <NavLink to="/ofertas" className={item}>
+      <NavLink to="/ofertas" replace className={item}>
         Lista
       </NavLink>
     </nav>
