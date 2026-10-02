@@ -6,14 +6,14 @@
     "node": ">=22.13"
   },
   "scripts": {
-    "dev": "pnpm -r --parallel --filter ./apps/* --filter @indice/shared dev",
+    "dev": "pnpm -r --parallel --filter './apps/*' --filter @indice/shared dev",
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "pnpm -r test",
-    "db:up": "docker compose up -d db",
+    "db:up": "docker compose up -d db redis",
     "db:down": "docker compose down"
   },
   "devDependencies": {

@@ -44,3 +44,24 @@ export function resolveQuantityG(
 export function pricePerKg(priceArs: number, quantityG: number): number {
   return Math.round((priceArs / (quantityG / 1000)) * 100) / 100;
 }
+
+export const ReportStatus = {
+  Active: 'active',
+  Flagged: 'flagged',
+} as const;
+
+export type ReportStatus = (typeof ReportStatus)[keyof typeof ReportStatus];
+
+export const IndexLevel = {
+  Department: 'department',
+  Province: 'province',
+  Country: 'country',
+} as const;
+
+export type IndexLevel = (typeof IndexLevel)[keyof typeof IndexLevel];
+
+export const SEARCH_RADIUS_M = { min: 100, max: 20_000, default: 3_000 } as const;
+
+export const REPORTER_NAME_MAX_LENGTH = 30;
+
+export const OBSERVED_AT_MAX_DAYS_AGO = 2;

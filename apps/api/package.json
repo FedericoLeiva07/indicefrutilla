@@ -5,29 +5,37 @@
   "scripts": {
     "build": "nest build",
     "dev": "nest start --watch",
+    "dev:worker": "nest start --watch --entryFile worker",
     "start": "node dist/main.js",
+    "start:worker": "node dist/worker.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run --project unit",
     "test:e2e": "vitest run --project e2e",
     "migration:run": "tsx ./node_modules/typeorm/cli.js migration:run -d src/database/data-source.ts",
     "migration:revert": "tsx ./node_modules/typeorm/cli.js migration:revert -d src/database/data-source.ts",
     "migration:generate": "tsx ./node_modules/typeorm/cli.js migration:generate -d src/database/data-source.ts",
-    "seed:geo": "tsx scripts/seed-geo.ts"
+    "seed:geo": "tsx scripts/seed-geo.ts",
+    "import:reference": "tsx scripts/import-reference.ts"
   },
   "dependencies": {
     "@indice/shared": "workspace:*",
     "@nestjs/common": "^12.1.2",
     "@nestjs/core": "^12.1.2",
     "@nestjs/platform-express": "^12.1.2",
+    "@nestjs/schedule": "^12.0.2",
     "@nestjs/swagger": "^12.0.2",
+    "@nestjs/throttler": "^6.7.1",
     "@nestjs/typeorm": "^12.0.2",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
     "express": "^5.2.1",
+    "fflate": "^0.8.3",
+    "ioredis": "^5.8.0",
     "pg": "^8.23.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
     "typeorm": "^1.1.1",
+    "xlsx": "file:vendor/xlsx-0.20.3.tgz",
     "zod": "^4.6.5"
   },
   "devDependencies": {

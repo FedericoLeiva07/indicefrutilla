@@ -1,22 +1,24 @@
 import { Module } from '@nestjs/common';
 import { APP_FILTER } from '@nestjs/core';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { HttpExceptionFilter } from './common/http-exception.filter';
-import { ConfigModule, ENV, type Env } from './config/config.module';
-import { typeormOptions } from './database/typeorm-options';
+import { DatabaseModule } from './database/database.module';
 import { DeviceModule } from './modules/device/device.module';
 import { GeoModule } from './modules/geo/geo.module';
 import { HealthController } from './modules/health/health.controller';
+import { RateLimitModule } from './modules/rate-limit/rate-limit.module';
+import { ReferenceModule } from './modules/reference/reference.module';
+import { ReportsModule } from './modules/reports/reports.module';
+import { StoresModule } from './modules/stores/stores.module';
 
 @Module({
   imports: [
-    ConfigModule,
-    TypeOrmModule.forRootAsync({
-      inject: [ENV],
-      useFactory: (env: Env) => typeormOptions(env.DATABASE_URL),
-    }),
+    DatabaseModule,
+    RateLimitModule,
     DeviceModule,
     GeoModule,
+    StoresModule,
+    ReportsModule,
+    ReferenceModule,
   ],
   controllers: [HealthController],
   providers: [{ provide: APP_FILTER, useClass: HttpExceptionFilter }],

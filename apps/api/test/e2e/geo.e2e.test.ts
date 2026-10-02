@@ -3,6 +3,7 @@ import request from 'supertest';
 import { DataSource } from 'typeorm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createTestApp } from './app';
+import { resetDatabase } from './fixtures';
 
 const TRES_DE_FEBRERO = {
   type: 'Polygon',
@@ -23,7 +24,7 @@ describe('geo (e2e)', () => {
   beforeAll(async () => {
     app = await createTestApp();
     const db = app.get(DataSource);
-    await db.query('TRUNCATE localities, departments, provinces');
+    await resetDatabase(db);
     await db.query(
       `INSERT INTO provinces (id, name, centroid)
        VALUES ('06', 'Buenos Aires', ST_SetSRID(ST_MakePoint(-60.5, -36.6), 4326)::geography)`,

@@ -11,12 +11,14 @@ Requisitos: Node 22.13+, Docker. pnpm se usa a través de corepack (`corepack en
 
 ```bash
 pnpm install
-pnpm db:up                                  # PostGIS en localhost:5442 (bases indice e indice_test)
+pnpm db:up                                  # PostGIS en :5442 (indice e indice_test) y Redis en :6389
 cp .env.example apps/api/.env               # y generar IP_HASH_SECRET con: openssl rand -hex 32
 pnpm --filter @indice/shared build
 pnpm --filter @indice/api migration:run
 pnpm --filter @indice/api seed:geo          # provincias, departamentos y localidades de Georef
+pnpm --filter @indice/api import:reference --all   # precios mayoristas del Mercado Central (sin --all: mes actual y anterior)
 pnpm dev                                    # API en :3000 (Swagger en /docs) y web en :5173
+pnpm --filter @indice/api dev:worker        # importador del Mercado Central (14 y 18 h) y limpieza de idempotencia
 ```
 
 ## Checks
@@ -25,4 +27,5 @@ pnpm dev                                    # API en :3000 (Swagger en /docs) y 
 pnpm lint && pnpm format:check && pnpm typecheck
 pnpm test                                   # unitarios
 pnpm --filter @indice/api test:e2e          # e2e contra indice_test (se recrea en cada corrida)
+TEST_REDIS_URL=redis://localhost:6389 pnpm --filter @indice/api test:e2e   # incluye el storage de Redis del rate limit
 ```
