@@ -344,6 +344,15 @@ export function OfferSheet({
           Ya votaste esta oferta desde este dispositivo
         </div>
       )}
+      {online && (
+        <Link
+          to="/cargar/modificar"
+          state={{ report }}
+          className="flex min-h-12 items-center justify-center rounded-xl border border-line-strong bg-white text-sm font-semibold text-ink no-underline"
+        >
+          Modificar precio
+        </Link>
+      )}
       <div className="flex items-center justify-center gap-4">
         <a
           href={directionsUrl(report.store.location.lat, report.store.location.lng)}

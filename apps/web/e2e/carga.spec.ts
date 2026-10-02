@@ -294,3 +294,30 @@ test.describe('Paso 3: confirmar y publicar (7, C5, C6, C9–C12)', () => {
     await expect(page.getByRole('button', { name: 'Corregir el precio' })).toBeVisible();
   });
 });
+
+test.describe('Modificar precio desde la ficha', () => {
+  test('arranca en el paso 2 con el comercio y la presentación de la oferta', async ({ page }) => {
+    const api = await prepare(page);
+    await page.goto('/ofertas');
+    await page.getByRole('listitem').first().getByRole('button').click();
+    await page.getByRole('link', { name: 'Modificar precio' }).click();
+    await expect(page.getByRole('heading', { name: '¿Cuánto estaban?' })).toBeVisible();
+    await expect(page.getByText('Paso 2 de 3')).toBeVisible();
+    await expect(page.getByRole('button', { name: '250 g' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await expect(page.getByLabel('Precio del cartel')).toHaveValue('');
+    await expect(page.getByText('Completá el precio')).toBeVisible();
+    await page.getByLabel('Precio del cartel').fill('1300');
+    await page.getByRole('button', { name: 'Continuar' }).click();
+    await page.getByRole('button', { name: 'Publicar precio' }).click();
+    await expect(page.getByRole('status')).toHaveText('¡Listo, tu precio ya está publicado!');
+    expect(reportPosts(api)[0]!.body).toMatchObject({
+      storeId: 100,
+      priceArs: 1300,
+      presentation: 'g250',
+      quality: 'primera',
+    });
+  });
+});

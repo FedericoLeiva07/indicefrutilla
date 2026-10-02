@@ -9,6 +9,7 @@ import {
   resolveQuantityG,
   shiftDate,
 } from '@indice/shared';
+import type { ReportItemDto } from '@indice/shared';
 import { readJson, removeKey, writeJson } from './storage';
 
 export interface DraftStore {
@@ -58,6 +59,28 @@ export function newDraft(): Draft {
     daysAgo: 0,
     idempotencyKey: crypto.randomUUID(),
   };
+}
+
+export type ReportPrefill = Pick<ReportItemDto, 'store' | 'presentation' | 'quantityG' | 'quality'>;
+
+export function draftFromReport(report: ReportPrefill): Draft {
+  const { id, name, address, location } = report.store;
+  const draft: Draft = {
+    ...newDraft(),
+    store: { id, name, address, location },
+    presentation: report.presentation,
+    quality: report.quality,
+  };
+  if (report.presentation === 'cajon') {
+    const kg = String(report.quantityG / 1000) as CajonKg;
+    if (CAJON_KG_OPTIONS.includes(kg)) draft.cajonKg = kg;
+    else {
+      draft.cajonKg = 'otro';
+      draft.cajonOtherKg = String(report.quantityG / 1000).replace('.', ',');
+    }
+  }
+  if (report.presentation === 'otro') draft.otherGrams = String(report.quantityG);
+  return draft;
 }
 
 export function loadDraft(): Draft | null {

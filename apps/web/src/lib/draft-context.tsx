@@ -5,6 +5,7 @@ interface DraftState {
   draft: Draft;
   update: (patch: Partial<Draft>) => void;
   reset: () => void;
+  replace: (draft: Draft) => void;
   finish: () => void;
 }
 
@@ -27,12 +28,20 @@ export function DraftProvider({ children }: { children: ReactNode }) {
     setDraft(next);
   }, []);
 
+  const replace = useCallback((next: Draft) => {
+    saveDraft(next);
+    setDraft(next);
+  }, []);
+
   const finish = useCallback(() => {
     clearDraft();
     setDraft(newDraft());
   }, []);
 
-  const value = useMemo(() => ({ draft, update, reset, finish }), [draft, update, reset, finish]);
+  const value = useMemo(
+    () => ({ draft, update, reset, replace, finish }),
+    [draft, update, reset, replace, finish],
+  );
   return <DraftContext.Provider value={value}>{children}</DraftContext.Provider>;
 }
 

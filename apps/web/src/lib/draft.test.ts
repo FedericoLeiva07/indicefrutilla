@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  draftFromReport,
   draftPricePerKg,
   draftQuantityG,
   formatPriceInput,
@@ -89,5 +90,46 @@ describe('observedAt', () => {
     const now = new Date('2026-10-02T01:30:00Z');
     expect(observedAt(0, now)).toBe('2026-10-01');
     expect(observedAt(2, now)).toBe('2026-09-29');
+  });
+});
+
+describe('draftFromReport', () => {
+  const store = {
+    id: 7,
+    name: 'Verdulería Don Tito',
+    address: 'Av. Urquiza 4120',
+    location: { lat: -34.6, lng: -58.5 },
+  };
+
+  it('copia comercio, presentación y calidad, y deja el precio vacío', () => {
+    const d = draftFromReport({ store, presentation: 'g500', quantityG: 500, quality: 'segunda' });
+    expect(d.store).toEqual(store);
+    expect(d.presentation).toBe('g500');
+    expect(d.quality).toBe('segunda');
+    expect(d.priceText).toBe('');
+    expect(d.daysAgo).toBe(0);
+  });
+
+  it('elige los kilos del cajón o los escribe en otro', () => {
+    expect(
+      draftFromReport({ store, presentation: 'cajon', quantityG: 4000, quality: 'primera' })
+        .cajonKg,
+    ).toBe('4');
+    const otro = draftFromReport({
+      store,
+      presentation: 'cajon',
+      quantityG: 3500,
+      quality: 'primera',
+    });
+    expect(otro.cajonKg).toBe('otro');
+    expect(otro.cajonOtherKg).toBe('3,5');
+    expect(draftQuantityG(otro)).toBe(3500);
+  });
+
+  it('usa una clave de idempotencia nueva', () => {
+    const a = draftFromReport({ store, presentation: 'otro', quantityG: 750, quality: 'primera' });
+    const b = draftFromReport({ store, presentation: 'otro', quantityG: 750, quality: 'primera' });
+    expect(a.otherGrams).toBe('750');
+    expect(a.idempotencyKey).not.toBe(b.idempotencyKey);
   });
 });

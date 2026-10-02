@@ -9,6 +9,7 @@ import {
   type DraftError,
   type DraftField,
   draftPricePerKg,
+  draftQuantityG,
   formatPriceInput,
   validateDraft,
 } from '../../lib/draft';
@@ -292,7 +293,11 @@ function PriceStep({ location }: { location: PointLocation }) {
       >
         <span className="text-sm font-medium">Equivale a</span>
         <span className="font-display text-[22px] font-extrabold">
-          {ppk === null ? 'Completá el peso' : `${formatArs(ppk)} /kg`}
+          {ppk !== null
+            ? `${formatArs(ppk)} /kg`
+            : draftQuantityG(draft) === null
+              ? 'Completá el peso'
+              : 'Completá el precio'}
         </span>
       </div>
       {ppk !== null && zoneMedian !== null && !outOfRange && zone && (

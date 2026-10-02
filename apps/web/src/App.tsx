@@ -2,6 +2,7 @@ import { Navigate, Outlet, Route, Routes } from 'react-router';
 import { HomePage } from './pages/HomePage';
 import { ListPage } from './pages/ListPage';
 import { DraftProvider } from './lib/draft-context';
+import { EditPricePage } from './pages/load/EditPricePage';
 import { LoadConfirmPage } from './pages/load/LoadConfirmPage';
 import { LoadDonePage } from './pages/load/LoadDonePage';
 import { LoadPricePage } from './pages/load/LoadPricePage';
@@ -22,6 +23,7 @@ export function App() {
       <Route path="/cargar" element={<LoadFlow />}>
         <Route index element={<LoadStorePage />} />
         <Route path="comercio-nuevo" element={<NewStorePage />} />
+        <Route path="modificar" element={<EditPricePage />} />
         <Route path="precio" element={<LoadPricePage />} />
         <Route path="confirmar" element={<LoadConfirmPage />} />
         <Route path="listo" element={<LoadDonePage />} />
