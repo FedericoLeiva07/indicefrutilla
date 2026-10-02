@@ -95,6 +95,17 @@ describe('geo (e2e)', () => {
     expect(res.body.error.code).toBe('NOT_FOUND');
   });
 
+  it('no deja que un error quede cacheado con la caché del endpoint', async () => {
+    for (const path of [
+      '/api/v1/geo/provinces/99/departments',
+      '/api/v1/geo/provinces/abc/departments',
+    ]) {
+      const res = await api().get(path);
+      expect(res.status).toBeGreaterThanOrEqual(400);
+      expect(res.headers['cache-control']).toBe('no-store');
+    }
+  });
+
   it('valida el formato de los ids', async () => {
     const res = await api().get('/api/v1/geo/provinces/abc/departments').expect(400);
     expect(res.body.error).toMatchObject({

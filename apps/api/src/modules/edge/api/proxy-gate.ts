@@ -16,6 +16,7 @@ export function proxyGate(secret: string) {
     const { status, body } = filter.toResponse(
       new AppException(ErrorCode.Forbidden, 403, 'Esta API solo responde a la web de Índice'),
     );
+    res.setHeader('Cache-Control', 'no-store');
     res.status(status).json(body);
   };
 }

@@ -17,6 +17,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
     const res = host.switchToHttp().getResponse<Response>();
     const { status, body } = this.toResponse(exception);
+    res.setHeader('Cache-Control', 'no-store');
     const retryAfter = body.error.retryAfterSeconds;
     if (retryAfter !== undefined) res.setHeader('Retry-After', String(retryAfter));
     res.status(status).json(body);

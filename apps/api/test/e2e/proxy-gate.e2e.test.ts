@@ -26,6 +26,7 @@ describe('proxy de la web (e2e)', () => {
       expect(res.body).toEqual({
         error: { code: 'FORBIDDEN', message: 'Esta API solo responde a la web de Índice' },
       });
+      expect(res.headers['cache-control']).toBe('no-store');
     }
     await api().get('/api/v1/geo/provinces').set('X-Proxy-Secret', 'otro').expect(403);
   });
