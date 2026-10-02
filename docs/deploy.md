@@ -43,7 +43,7 @@ Un proyecto con cuatro servicios.
 ### api
 
 1. _New → GitHub repo_, este repo, sin _Root Directory_ (el Dockerfile copia `packages/shared`).
-2. _Settings → Config-as-code_: `apps/api/railway.api.json`. Define el Dockerfile, `node dist/migrate.js` como _pre-deploy_, el health check y el reinicio.
+2. No hace falta configurar el build: Railway toma `railway.json` de la raíz del repo, que define el Dockerfile, `node dist/migrate.js` como _pre-deploy_, el health check y el reinicio. Si en los logs del build aparece _Railpack_ en vez del Dockerfile, no está leyendo ese archivo.
 3. _Settings → Networking_: generar un dominio público (`*.up.railway.app`). Es lo que va en `API_ORIGIN` de Vercel.
 4. Variables:
 
@@ -64,7 +64,7 @@ La primera vez, el _pre-deploy_ aplica las migraciones, carga las zonas de Geore
 
 ### worker
 
-1. Mismo repo, _Config-as-code_: `apps/api/railway.worker.json` (`node dist/worker.js`).
+1. Mismo repo. En _Settings → Config-as-code → Railway Config File_ poner `/apps/api/railway.worker.json` (ruta absoluta, con la barra inicial). Si no, toma el `railway.json` de la raíz y arranca como API.
 2. **Sin dominio público.** Una sola réplica: corre el Mercado Central (14 y 18 h), el índice (cada hora) y la limpieza de idempotencia.
 3. Las mismas variables que `api`. Conviene definirlas como _Shared Variables_ del proyecto o referenciarlas (`${{api.PROXY_SECRET}}`).
 
