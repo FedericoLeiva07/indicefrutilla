@@ -9,3 +9,35 @@ export function normalizeStoreName(name: string): string {
     .trim()
     .slice(0, STORE_NAME_MAX_LENGTH);
 }
+
+const GENERIC_WORDS = new Set([
+  'verduleria',
+  'fruteria',
+  'fruta',
+  'frutas',
+  'verduras',
+  'almacen',
+  'mercado',
+  'minimercado',
+  'super',
+  'supermercado',
+  'autoservicio',
+  'despensa',
+  'kiosco',
+  'la',
+  'el',
+  'los',
+  'las',
+  'de',
+  'del',
+  'y',
+]);
+
+export function storeSearchTerm(query: string): string {
+  const normalized = normalizeStoreName(query);
+  const specific = normalized
+    .split(' ')
+    .filter((word) => word && !GENERIC_WORDS.has(word))
+    .join(' ');
+  return specific || normalized;
+}

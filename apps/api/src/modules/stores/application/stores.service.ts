@@ -13,7 +13,7 @@ import { GeoService } from '../../geo/application/geo.service';
 import { IdempotencyService, type StoredResponse } from '../../idempotency/idempotency.service';
 import { TurnstileService } from '../../turnstile/turnstile.service';
 import type { CreateStoreDto } from '../api/stores.dto';
-import { normalizeStoreName } from '../domain/normalize-name';
+import { normalizeStoreName, storeSearchTerm } from '../domain/normalize-name';
 import { StoresQueries } from '../infra/stores.queries';
 
 export interface WriteContext {
@@ -37,9 +37,9 @@ export class StoresService {
   }
 
   async search(q: string, lat: number, lng: number, radius: number): Promise<NearbyStoreDto[]> {
-    const normalized = normalizeStoreName(q);
-    if (normalized.length < 2) return [];
-    return this.queries.search(normalized, lat, lng, radius);
+    const term = storeSearchTerm(q);
+    if (term.length < 2) return [];
+    return this.queries.search(term, lat, lng, radius);
   }
 
   async create(dto: CreateStoreDto, ctx: WriteContext): Promise<StoredResponse<StoreDto>> {

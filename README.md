@@ -13,6 +13,7 @@ Requisitos: Node 22.13+, Docker. pnpm se usa a través de corepack (`corepack en
 pnpm install
 pnpm db:up                                  # PostGIS en :5442 (indice e indice_test) y Redis en :6389
 cp .env.example apps/api/.env               # y generar IP_HASH_SECRET con: openssl rand -hex 32
+cp apps/web/.env.example apps/web/.env       # clave de Turnstile (la de prueba de Cloudflare acepta todo)
 pnpm --filter @indice/shared build
 pnpm --filter @indice/api migration:run
 pnpm --filter @indice/api seed:geo          # provincias, departamentos y localidades de Georef

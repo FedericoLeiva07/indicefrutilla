@@ -99,6 +99,25 @@ describe('stores (e2e)', () => {
       expect(res.body.map((s: { id: number }) => s.id)).toEqual([id]);
     });
 
+    it('no confunde comercios que solo comparten el rubro', async () => {
+      await insertStore(db, { name: 'Verdulería Rosa', lat: -34.605, lng: -58.563 });
+      const tito = await insertStore(db, {
+        name: 'Verdulería Don Tito',
+        lat: -34.605,
+        lng: -58.563,
+      });
+      const pepe = await api()
+        .get('/api/v1/stores/search')
+        .query({ ...CASEROS, q: 'Verdulería Pepe' })
+        .expect(200);
+      expect(pepe.body).toEqual([]);
+      const titu = await api()
+        .get('/api/v1/stores/search')
+        .query({ ...CASEROS, q: 'don titu' })
+        .expect(200);
+      expect(titu.body.map((s: { id: number }) => s.id)).toEqual([tito]);
+    });
+
     it('devuelve una lista vacía sin resultados (C1)', async () => {
       const res = await api()
         .get('/api/v1/stores/search')

@@ -57,8 +57,8 @@ export class StoresQueries {
        SELECT ${NEARBY_COLUMNS}
          FROM stores s, pt
         WHERE ST_DWithin(s.location, pt.g, $3)
-          AND (s.name_normalized % $4 OR s.name_normalized LIKE '%' || $4 || '%')
-        ORDER BY similarity(s.name_normalized, $4) DESC, s.location <-> pt.g, s.id
+          AND ($4 <% s.name_normalized OR s.name_normalized LIKE '%' || $4 || '%')
+        ORDER BY word_similarity($4, s.name_normalized) DESC, s.location <-> pt.g, s.id
         LIMIT ${LIST_LIMIT}`,
       [lat, lng, radius, q],
     );

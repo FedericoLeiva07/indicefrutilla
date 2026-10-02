@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeStoreName } from '../../src/modules/stores/domain/normalize-name';
+import {
+  normalizeStoreName,
+  storeSearchTerm,
+} from '../../src/modules/stores/domain/normalize-name';
 
 describe('normalizeStoreName', () => {
   it('saca tildes, mayúsculas y signos', () => {
@@ -10,5 +13,16 @@ describe('normalizeStoreName', () => {
 
   it('conserva números', () => {
     expect(normalizeStoreName('Super 24 hs.')).toBe('super 24 hs');
+  });
+});
+
+describe('storeSearchTerm', () => {
+  it('saca las palabras genéricas del rubro', () => {
+    expect(storeSearchTerm('Verdulería Pepe')).toBe('pepe');
+    expect(storeSearchTerm('Frutería La Esquina')).toBe('esquina');
+  });
+
+  it('usa el término completo si solo hay palabras genéricas', () => {
+    expect(storeSearchTerm('Verdulería')).toBe('verduleria');
   });
 });
