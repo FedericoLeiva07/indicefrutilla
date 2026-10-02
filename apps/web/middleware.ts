@@ -1,7 +1,7 @@
 import { ipAddress, rewrite } from '@vercel/functions';
-import { decideProxy } from './edge/api-proxy';
+import { decideProxy } from './edge/api-proxy.js';
 
-export const config = { matcher: '/api/:path*' };
+export const config = { matcher: '/api/:path*', runtime: 'nodejs' };
 
 export default function middleware(request: Request): Response {
   const decision = decideProxy(request, process.env, ipAddress(request));
