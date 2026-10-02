@@ -10,3 +10,4 @@ apps/api/seed-cache/
 playwright-report/
 test-results/
 .DS_Store
+.claude/autopilot.lock
