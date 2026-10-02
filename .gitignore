@@ -1,0 +1,12 @@
+node_modules/
+dist/
+coverage/
+.env
+.env.*
+!.env.example
+*.tsbuildinfo
+.vite/
+apps/api/seed-cache/
+playwright-report/
+test-results/
+.DS_Store
