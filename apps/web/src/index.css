@@ -25,10 +25,30 @@
   --color-danger: #b3261e;
   --color-danger-soft: #fdecec;
   --color-danger-line: #e8b4b0;
+
+  --color-skeleton: #e4e7e1;
+  --color-offline: #eceeea;
+  --color-offline-line: #d3d8d0;
+  --color-divider: #e8ebe5;
 }
 
 body {
   background: var(--color-ground);
   color: var(--color-ink);
   font-family: var(--font-sans);
+}
+
+@layer base {
+  a {
+    color: var(--color-brand);
+  }
+
+  a:hover {
+    color: var(--color-brand-dark);
+  }
+}
+
+.price-pin {
+  background: transparent;
+  border: 0;
 }

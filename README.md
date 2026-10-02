@@ -17,8 +17,9 @@ pnpm --filter @indice/shared build
 pnpm --filter @indice/api migration:run
 pnpm --filter @indice/api seed:geo          # provincias, departamentos y localidades de Georef
 pnpm --filter @indice/api import:reference --all   # precios mayoristas del Mercado Central (sin --all: mes actual y anterior)
+pnpm --filter @indice/api seed:demo         # opcional: comercios y ofertas de prueba en Caseros (--reset los borra)
 pnpm dev                                    # API en :3000 (Swagger en /docs) y web en :5173
-pnpm --filter @indice/api dev:worker        # importador del Mercado Central (14 y 18 h) y limpieza de idempotencia
+pnpm --filter @indice/api dev:worker        # Mercado Central (14 y 18 h), índice semanal (cada hora) y limpieza de idempotencia
 ```
 
 ## Checks

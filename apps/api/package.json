@@ -15,7 +15,8 @@
     "migration:revert": "tsx ./node_modules/typeorm/cli.js migration:revert -d src/database/data-source.ts",
     "migration:generate": "tsx ./node_modules/typeorm/cli.js migration:generate -d src/database/data-source.ts",
     "seed:geo": "tsx scripts/seed-geo.ts",
-    "import:reference": "tsx scripts/import-reference.ts"
+    "import:reference": "tsx scripts/import-reference.ts",
+    "seed:demo": "tsx scripts/seed-demo.ts"
   },
   "dependencies": {
     "@indice/shared": "workspace:*",
