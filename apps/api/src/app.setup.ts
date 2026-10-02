@@ -9,6 +9,8 @@ export function setupApp(app: NestExpressApplication, env: Env): void {
   app.set('trust proxy', env.TRUST_PROXY_HOPS);
   app.enableCors({ origin: env.CORS_ORIGIN.split(',').map((o) => o.trim()) });
 
+  if (env.NODE_ENV === 'production') return;
+
   const config = new DocumentBuilder()
     .setTitle('Índice Frutilla API')
     .setVersion('1')

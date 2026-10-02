@@ -30,4 +30,12 @@ pnpm lint && pnpm format:check && pnpm typecheck
 pnpm test                                   # unitarios
 pnpm --filter @indice/api test:e2e          # e2e contra indice_test (se recrea en cada corrida)
 TEST_REDIS_URL=redis://localhost:6389 pnpm --filter @indice/api test:e2e   # incluye el storage de Redis del rate limit
+pnpm --filter @indice/web test:e2e          # Playwright: cada estado de §9 sobre el build de producción, con la API mockeada
+TEST_REDIS_URL=redis://localhost:6389 pnpm --filter @indice/api test:load  # prueba de carga y límites (docs/prueba-de-carga.md)
 ```
+
+Playwright necesita Chromium una vez: `pnpm --filter @indice/web exec playwright install chromium`.
+
+## Deploy
+
+Ver [docs/deploy.md](docs/deploy.md): imagen de la API y el worker, migraciones, variables de entorno, Vercel y Cloudflare.

@@ -1,5 +1,5 @@
 import { Link } from 'react-router';
-import { ApiError } from '../lib/api';
+import { toApiError } from '../lib/api';
 import { relativeAge } from '../lib/format';
 import { AlertIcon, WifiOffIcon } from './Icons';
 
@@ -29,8 +29,8 @@ export function ErrorState({
   onRetry: () => void;
   title?: string;
 }) {
-  const apiError = error instanceof ApiError ? error : null;
-  const network = apiError?.code === 'NETWORK';
+  const apiError = toApiError(error);
+  const network = apiError.code === 'NETWORK';
   return (
     <div role="alert" className="flex flex-col items-center gap-3 px-6 py-8 text-center">
       <div className="flex size-16 items-center justify-center rounded-full bg-danger-soft text-danger">
@@ -42,7 +42,7 @@ export function ErrorState({
           ? 'No hay conexión o el servidor tardó demasiado en responder. Probá de nuevo en unos segundos.'
           : 'Es un problema momentáneo de nuestro lado. Probá de nuevo en unos segundos.'}{' '}
         Si sigue pasando, avisanos con el código{' '}
-        <strong className="text-ink">{apiError?.displayCode ?? 'E-RED'}</strong>.
+        <strong className="text-ink">{apiError.displayCode}</strong>.
       </p>
       <div className="flex flex-col items-stretch gap-2 self-stretch sm:flex-row sm:justify-center">
         <button

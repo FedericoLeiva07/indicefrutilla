@@ -25,12 +25,11 @@ export function LoadDonePage() {
           <path d="M5 12l5 5 9-10" />
         </svg>
       </div>
-      <h1
-        role="status"
-        className="m-0 font-display text-[26px] leading-tight font-extrabold tracking-tight"
-      >
-        ¡Listo, tu precio ya está publicado!
-      </h1>
+      <div role="status">
+        <h1 className="m-0 font-display text-[26px] leading-tight font-extrabold tracking-tight">
+          ¡Listo, tu precio ya está publicado!
+        </h1>
+      </div>
       <p className="m-0 text-[15px] leading-relaxed text-muted">
         {quality === 'primera'
           ? `Ya cuenta para el índice de ${response.zone.name}.`

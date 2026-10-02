@@ -3,7 +3,7 @@ import 'leaflet/dist/leaflet.css';
 import { MapContainer, Marker, TileLayer, useMapEvents } from 'react-leaflet';
 
 const pin = L.divIcon({
-  className: 'price-pin',
+  className: 'map-pin',
   html: '<span style="display:block;width:26px;height:26px;transform:translate(-50%,-100%);border-radius:50% 50% 50% 0;rotate:-45deg;background:#C81D35;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3)"></span>',
   iconSize: [0, 0],
 });

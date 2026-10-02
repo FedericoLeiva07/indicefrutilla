@@ -2,7 +2,9 @@ import type { ApiErrorBody, ErrorCode } from '@indice/shared';
 import axios, { AxiosError } from 'axios';
 import { getDeviceId } from './device';
 
-export const api = axios.create({ baseURL: '/api/v1', timeout: 15_000 });
+export const API_BASE_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? '/api/v1';
+
+export const api = axios.create({ baseURL: API_BASE_URL, timeout: 15_000 });
 
 api.interceptors.request.use((config) => {
   config.headers.set('X-Device-Id', getDeviceId());

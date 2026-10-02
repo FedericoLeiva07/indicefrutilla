@@ -49,6 +49,13 @@ body {
 }
 
 .price-pin {
+  width: max-content;
+  translate: -50% -50%;
+  background: transparent;
+  border: 0;
+}
+
+.map-pin {
   background: transparent;
   border: 0;
 }

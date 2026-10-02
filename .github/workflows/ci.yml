@@ -66,3 +66,35 @@ jobs:
         run: pnpm --filter @indice/api test:e2e
 
       - run: pnpm build
+
+  e2e-web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build shared
+        run: pnpm --filter @indice/shared build
+
+      - name: Instalar Chromium
+        run: pnpm --filter @indice/web exec playwright install --with-deps chromium
+
+      - name: Playwright
+        run: pnpm --filter @indice/web test:e2e
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report
+          retention-days: 7

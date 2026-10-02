@@ -36,8 +36,11 @@
 ```bash
 pnpm format:check && pnpm lint && pnpm typecheck && pnpm test
 TEST_REDIS_URL=redis://localhost:6389 pnpm --filter @indice/api test:e2e
+pnpm --filter @indice/web test:e2e
 pnpm build
 ```
+
+- La prueba de carga (`pnpm --filter @indice/api test:load`) se corre cuando se toca una consulta de lectura o un límite.
 
 ## Git
 

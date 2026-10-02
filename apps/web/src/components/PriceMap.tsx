@@ -22,8 +22,8 @@ function pinIcon(report: ReportItemDto, selected: boolean, cheapest: boolean): L
       : 'background:#fff;color:#16211C;border:1px solid #C9CFC6';
   return L.divIcon({
     className: 'price-pin',
-    html: `<span style="display:inline-block;transform:translate(-50%,-50%);padding:6px 10px;border-radius:999px;font:600 13px Figtree,sans-serif;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.22);${tone}">${formatArs(report.pricePerKg)}</span>`,
-    iconSize: [0, 0],
+    html: `<span style="display:inline-block;padding:6px 10px;border-radius:999px;font:600 13px Figtree,sans-serif;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.22);${tone}">${formatArs(report.pricePerKg)}</span>`,
+    iconSize: null as unknown as L.PointExpression,
   });
 }
 
@@ -102,7 +102,16 @@ export function PriceMap({
           title={`${report.store.name}: ${formatArs(report.pricePerKg)} por kg`}
           alt={`${report.store.name}: ${formatArs(report.pricePerKg)} por kg`}
           keyboard
-          eventHandlers={{ click: () => onSelect(report) }}
+          eventHandlers={{
+            click: () => onSelect(report),
+            add: (e) =>
+              (e.target as L.Marker)
+                .getElement()
+                ?.setAttribute(
+                  'aria-label',
+                  `${report.store.name}: ${formatArs(report.pricePerKg)} por kg`,
+                ),
+          }}
         />
       ))}
     </MapContainer>

@@ -1,13 +1,14 @@
 import { Injectable } from '@nestjs/common';
-import type {
-  Presentation,
-  Quality,
-  ReportItemDto,
-  ReportSort,
-  ReportStatus,
+import {
+  COMMUNITY_THRESHOLDS,
+  type Presentation,
+  type Quality,
+  type ReportItemDto,
+  type ReportSort,
+  type ReportStatus,
 } from '@indice/shared';
 import { DataSource, type EntityManager } from 'typeorm';
-import { ABOVE_VOTE_THRESHOLD, VOTES_LATERAL } from './report-votes.sql';
+import { VOTE_BALANCE, VOTES_LATERAL } from './report-votes.sql';
 
 export interface StoreZone {
   storeId: number;
@@ -75,27 +76,53 @@ export class ReportsQueries {
     limit: number;
     deviceId: string | null;
   }): Promise<{ items: ReportItemDto[]; total: number }> {
-    const from = `FROM reports r JOIN stores s ON s.id = r.store_id CROSS JOIN pt ${VOTES_LATERAL('$5')}
-                 WHERE r.status = 'active' AND r.observed_at >= $4::date
-                   AND ST_DWithin(s.location, pt.g, $3) AND ${ABOVE_VOTE_THRESHOLD}`;
-    const args = [params.lat, params.lng, params.radius, params.since, params.deviceId];
-    const [rows, [count]]: [ItemRow[], Array<{ total: number }>] = await Promise.all([
-      this.dataSource.query(
-        `WITH pt AS (SELECT ${POINT} AS g)
-         SELECT ${ITEM_COLUMNS}, round(ST_Distance(s.location, pt.g))::int AS "distanceM"
-           ${from}
-          ORDER BY ${ORDER[params.sort]}
-          LIMIT $6 OFFSET $7`,
-        [...args, params.limit, params.offset],
-      ),
-      this.dataSource.query(
-        `WITH pt AS (SELECT ${POINT} AS g)
-         SELECT count(*)::int AS total
-           ${from}`,
-        args,
-      ),
-    ]);
-    return { items: rows.map(toItem), total: count?.total ?? 0 };
+    const rows: Array<ItemRow & { total: number }> = await this.dataSource.query(
+      `WITH pt AS (SELECT ${POINT} AS g),
+       downvoted AS (
+         SELECT v.report_id
+           FROM report_votes v
+           JOIN reports rv ON rv.id = v.report_id
+          WHERE rv.observed_at >= $4::date
+          GROUP BY v.report_id
+         HAVING ${VOTE_BALANCE('v')} <= ${COMMUNITY_THRESHOLDS.minVoteBalance}
+       ),
+       nearby AS MATERIALIZED (
+         SELECT s.id AS store_id, ST_Distance(s.location, pt.g) AS distance
+           FROM stores s, pt
+          WHERE ST_DWithin(s.location, pt.g, $3)
+       ),
+       ranked AS (
+         SELECT r.id AS rid,
+                round(n.distance)::int AS distance_m,
+                row_number() OVER (ORDER BY ${ORDER[params.sort]}) AS rn,
+                count(*) OVER () AS total
+           FROM nearby n
+           JOIN reports r ON r.store_id = n.store_id
+          WHERE r.status = 'active'
+            AND r.observed_at >= $4::date
+            AND r.id NOT IN (SELECT report_id FROM downvoted)
+       )
+       SELECT ${ITEM_COLUMNS}, ranked.distance_m AS "distanceM", ranked.total::int AS total
+         FROM ranked
+         JOIN reports r ON r.id = ranked.rid
+         JOIN stores s ON s.id = r.store_id
+         ${VOTES_LATERAL('$5')}
+        WHERE ranked.rn > $6 AND ranked.rn <= $6 + $7
+        ORDER BY ranked.rn`,
+      [
+        params.lat,
+        params.lng,
+        params.radius,
+        params.since,
+        params.deviceId,
+        params.offset,
+        params.limit,
+      ],
+    );
+    return {
+      items: rows.map(({ total: _total, ...row }) => toItem(row)),
+      total: rows[0]?.total ?? 0,
+    };
   }
 
   async findById(
@@ -129,7 +156,7 @@ const ITEM_COLUMNS = `
 
 const ORDER: Record<ReportSort, string> = {
   price: `r.price_per_kg ASC, r.id DESC`,
-  distance: `s.location <-> pt.g, r.id DESC`,
+  distance: `n.distance, r.id DESC`,
   recent: `r.observed_at DESC, r.created_at DESC, r.id DESC`,
 };
 

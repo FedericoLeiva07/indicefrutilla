@@ -16,7 +16,9 @@
     "migration:generate": "tsx ./node_modules/typeorm/cli.js migration:generate -d src/database/data-source.ts",
     "seed:geo": "tsx scripts/seed-geo.ts",
     "import:reference": "tsx scripts/import-reference.ts",
-    "seed:demo": "tsx scripts/seed-demo.ts"
+    "seed:demo": "tsx scripts/seed-demo.ts",
+    "test:load": "vitest run --project load",
+    "migrate": "node dist/migrate.js"
   },
   "dependencies": {
     "@indice/shared": "workspace:*",

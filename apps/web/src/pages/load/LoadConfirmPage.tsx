@@ -363,9 +363,9 @@ function Outcome({
       >
         {icon ?? <AlertIcon size={28} />}
       </div>
-      <h1 role="alert" className="m-0 font-display text-2xl font-extrabold tracking-tight">
-        {title}
-      </h1>
+      <div role="alert">
+        <h1 className="m-0 font-display text-2xl font-extrabold tracking-tight">{title}</h1>
+      </div>
       {children}
     </main>
   );

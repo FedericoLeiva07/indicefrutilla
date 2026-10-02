@@ -34,4 +34,15 @@ describe('loadEnv', () => {
       loadEnv({ ...base, PLAUSIBLE_MIN_PPK: '5000', PLAUSIBLE_MAX_PPK: '4000' }),
     ).toThrow(/PLAUSIBLE_MIN_PPK/);
   });
+
+  it('en producción exige Redis y una clave real de Turnstile', () => {
+    const prod = { ...base, NODE_ENV: 'production', REDIS_URL: 'redis://r:6379' };
+    expect(() => loadEnv({ ...prod, REDIS_URL: undefined })).toThrow(/REDIS_URL/);
+    expect(() =>
+      loadEnv({ ...prod, TURNSTILE_SECRET_KEY: '1x0000000000000000000000000000000AA' }),
+    ).toThrow(/TURNSTILE_SECRET_KEY/);
+    expect(loadEnv({ ...prod, TURNSTILE_SECRET_KEY: '0x4AAAAAAA-real-secret' }).NODE_ENV).toBe(
+      'production',
+    );
+  });
 });

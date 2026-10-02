@@ -8,7 +8,7 @@ import { typeormOptions } from './typeorm-options';
     ConfigModule,
     TypeOrmModule.forRootAsync({
       inject: [ENV],
-      useFactory: (env: Env) => typeormOptions(env.DATABASE_URL),
+      useFactory: (env: Env) => typeormOptions(env.DATABASE_URL, env.DB_POOL_SIZE),
     }),
   ],
 })
